@@ -48,8 +48,6 @@ class Simulation(object):
         raise NotImplementedError
 
     def run(self, callbacks=None, progress=None):
-        self.begin()
-
         if progress:
             progress.begin(self)
 
@@ -77,5 +75,3 @@ class Simulation(object):
 
         if progress:
             progress.end(self)
-
-        self.end()

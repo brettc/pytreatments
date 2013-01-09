@@ -4,31 +4,20 @@ log = logging.getLogger("context")
 import plugin
 
 
-def scripted(method):
-    # Don't wrap the function, just record it
-    # print method.func_name, method.func_globals
-    # print dir(method)
-    # script_functions.append(method.func_name)
-    method.scripted = True
-    return method
-
-
 class Context(object):
     def __init__(self, config):
         self.config = config
-        self.namespace = {}
 
-        # Initialise a namespace dictionary for loading the script. Keys in
-        # this dictionary will be available in the namespace of the
-        # configuration file
-        for name in dir(self):
-            attr = getattr(self, name)
-            # if type(attr) is types.MethodType and hasattr(attr, 'scripted'):
-            # TODO should warn about collisions
-            if hasattr(attr, 'scripted'):
-                self.namespace[name] = attr
+        ns = {}
+        self.load_namespace(ns)
+        ns['add_treatment'] = self.add_treatment
+        ns['load_plugin'] = self.load_plugin
 
-        self.load_namespace(self.namespace)
+        # Load the plugin class into the namespace
+        for p in plugin.plugin_classes:
+            ns[p.__name__] = p
+
+        self.namespace = ns
 
     def load_namespace(self):
         raise NotImplementedError
@@ -36,14 +25,10 @@ class Context(object):
     def init(self, pth):
         self.config.init_from_script(pth)
 
-    # -------------------------------------------------
-    # Scripted functions available to config file
-    @scripted
     def add_treatment(self, name, p, replicates=1, **kwargs):
         # Duplicate the parameters so that they can't be changed
         self.config.experiment.add_treatment(name, p, replicates, **kwargs)
 
-    @scripted
     def load_plugin(self, cls, **kwargs):
         if cls not in plugin.plugin_classes:
             log.error("Ignoring unknown plugin %s", str(cls))
