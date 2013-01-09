@@ -6,79 +6,6 @@ from simulation import Simulation
 from plugin import TreatmentPlugin, ReplicatePlugin, ExperimentPlugin
 import random
 
-
-class Treatment(object):
-    def __init__(self, experiment, name, rcount, parameters, challenges):
-        self.experiment = experiment
-        self.name = name
-        self.replicate = None
-        self.replicate_count = rcount
-        self.parameters = parameters
-        self.challenges = challenges
-
-    def run(self, e_analyses, e_callbacks, progress=None):
-
-        # Set up and run the treatment_analyses
-        t_analyses = []
-        callbacks = e_callbacks[:]
-        for cls, kwargs in self.experiment.treatment_analyses:
-            c = cls(self.experiment.config, self)
-            c.__dict__.update(kwargs)
-            t_analyses.append(c)
-            if hasattr(c, 'step'):
-                callbacks.append(c.step)
-
-        for c in chain(e_analyses, t_analyses):
-            if hasattr(c, 'begin_treatment'):
-                log.debug("Begin Treatment processing for PLUGIN '%s'" % c.name)
-                c.begin_treatment()
-
-        # Run all the replicates
-        for i in range(self.replicate_count):
-            self.replicate = i
-            self.run_replicate(e_analyses, t_analyses, callbacks[:], progress)
-
-        for c in chain(reversed(t_analyses), reversed(e_analyses)):
-            if hasattr(c, 'end_treatment'):
-                c.end_treatment()
-                log.debug("End Treatment processing for PLUGIN '%s'" % c.name)
-
-    def run_replicate(self, e_analyses, t_analyses, callbacks, progress):
-        log.info("{:-<78}".format("Begin Treatment '%s', replicate %d of %d" % (
-                 self.name,
-                 self.replicate + 1,
-                 self.replicate_count)))
-
-        sim = Simulation(self.parameters, self.challenges, self.name, self.replicate)
-
-        r_analyses = []
-        for cls, kwargs in self.experiment.replicate_analyses:
-            c = cls(self.experiment.config, self)
-            c.__dict__.update(kwargs)
-            r_analyses.append(c)
-            if hasattr(c, 'step'):
-                callbacks.append(c.step)
-
-        for c in chain(e_analyses, t_analyses, r_analyses):
-            if hasattr(c, 'begin_replicate'):
-                log.debug("Begin Replicate processing for PLUGIN '%s'" % c.name)
-                c.begin_replicate(sim)
-
-        sim.run(callbacks, progress)
-
-        for c in chain(reversed(r_analyses),
-                       reversed(t_analyses),
-                       reversed(e_analyses)):
-            if hasattr(c, 'end_replicate'):
-                c.end_replicate(sim)
-                log.debug("End Replicate processing for PLUGIN '%s'" % c.name)
-
-        # log.info("{:-<78}".format("End Treatment '%s', replicate %d of %d" % (
-                 # self.name,
-                 # self.replicate + 1,
-                 # self.replicate_count)))
-
-
 class Experiment(object):
     def __init__(self, config, name):
         self.config = config
@@ -138,5 +65,79 @@ class Experiment(object):
             if hasattr(c, 'end_experiment'):
                 log.info("end experiment analysis '%s'", c.name)
                 c.end_experiment()
+
+
+
+class Treatment(object):
+    def __init__(self, experiment, name, rcount, parameters, challenges):
+        self.experiment = experiment
+        self.sim_class = experiment.config.sim_class
+        self.name = name
+        self.replicate = None
+        self.replicate_count = rcount
+        self.parameters = parameters
+        self.challenges = challenges
+
+    def run(self, e_analyses, e_callbacks, progress=None):
+
+        # Set up and run the treatment_analyses
+        t_analyses = []
+        callbacks = e_callbacks[:]
+        for cls, kwargs in self.experiment.treatment_analyses:
+            c = cls(self.experiment.config, self)
+            c.__dict__.update(kwargs)
+            t_analyses.append(c)
+            if hasattr(c, 'step'):
+                callbacks.append(c.step)
+
+        for c in chain(e_analyses, t_analyses):
+            if hasattr(c, 'begin_treatment'):
+                log.debug("Begin Treatment processing for PLUGIN '%s'" % c.name)
+                c.begin_treatment()
+
+        # Run all the replicates
+        for i in range(self.replicate_count):
+            self.replicate = i
+            self.run_replicate(e_analyses, t_analyses, callbacks[:], progress)
+
+        for c in chain(reversed(t_analyses), reversed(e_analyses)):
+            if hasattr(c, 'end_treatment'):
+                c.end_treatment()
+                log.debug("End Treatment processing for PLUGIN '%s'" % c.name)
+
+    def run_replicate(self, e_analyses, t_analyses, callbacks, progress):
+        log.info("{:-<78}".format("Begin Treatment '%s', replicate %d of %d" % (
+                 self.name,
+                 self.replicate + 1,
+                 self.replicate_count)))
+
+        sim = self.sim_class(self.parameters, self.challenges, self.name, self.replicate)
+
+        r_analyses = []
+        for cls, kwargs in self.experiment.replicate_analyses:
+            c = cls(self.experiment.config, self)
+            c.__dict__.update(kwargs)
+            r_analyses.append(c)
+            if hasattr(c, 'step'):
+                callbacks.append(c.step)
+
+        for c in chain(e_analyses, t_analyses, r_analyses):
+            if hasattr(c, 'begin_replicate'):
+                log.debug("Begin Replicate processing for PLUGIN '%s'" % c.name)
+                c.begin_replicate(sim)
+
+        sim.run(callbacks, progress)
+
+        for c in chain(reversed(r_analyses),
+                       reversed(t_analyses),
+                       reversed(e_analyses)):
+            if hasattr(c, 'end_replicate'):
+                c.end_replicate(sim)
+                log.debug("End Replicate processing for PLUGIN '%s'" % c.name)
+
+        # log.info("{:-<78}".format("End Treatment '%s', replicate %d of %d" % (
+                 # self.name,
+                 # self.replicate + 1,
+                 # self.replicate_count)))
 
 

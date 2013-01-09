@@ -8,8 +8,9 @@ from experiment import Experiment
 class Configuration(object):
     """This holds the user configuration info"""
 
-    def __init__(self, clean=False):
+    def __init__(self, sim_class, clean=False):
         self.random_seed = None
+        self.sim_class = sim_class
         self.clean = clean
 
     def init(self, base_path, name):

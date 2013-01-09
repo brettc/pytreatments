@@ -16,6 +16,7 @@ class Script(object):
 
     def load(self, pth):
         self.context.init(pth)
+        print self.context.__dict__
         try:
             log.info("{:-<78}".format("Loading Script %s" % pth))
             execfile('%s' % pth, self.context.namespace)

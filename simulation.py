@@ -1,7 +1,5 @@
 import logging
-log = logging.getLogger("simulation")
-
-from population import Population
+log = logging.getLogger("pytreatments.simulation")
 
 
 class Interrupt(Exception):
@@ -44,9 +42,6 @@ class Simulation(object):
         else:
             self.description = ""
 
-        self.population = Population(parameters)
-        self.about_to_sweep = False
-        self.goto_next_challenge()
         self.time_step = 0
 
     def run(self, callbacks=None, progress=None):
@@ -78,34 +73,6 @@ class Simulation(object):
         if progress:
             progress.end(self)
 
-    def goto_next_challenge(self):
-        if self.challenge_index + 1 >= len(self.challenges):
-            log.info("No further challenges...")
-            return False
-        self.bump_challenge = True
-        return True
 
     def step(self):
-        if self.bump_challenge:
-            self.bump_challenge = False
-            self.challenge_index += 1
-            log.info(">>> Moving to new challenge %s", self.challenge_index)
-
-        self.population.new_generation(self.about_to_sweep)
-        # Always reset
-        self.about_to_sweep = False
-
-        ch = self.challenges[self.challenge_index]
-        self.population.encounter(ch)
-        log.info('%s: Challenge %02d, Generation %05d, max fitness is %5.5f',
-                 self.description, self.challenge_index,
-                 self.population.generation, max(self.population.fitnesses))
-
-        # If we've found the best, we're done with this challenge
-        best = max(self.population.fitnesses)
-        if best == 1.0:
-            if self.parameters.sweep:
-                self.about_to_sweep = True
-            return self.goto_next_challenge()
-
-        return True
+        raise NotImplementedError
