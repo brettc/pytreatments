@@ -18,10 +18,10 @@ class Experiment(object):
         self.treatment_analyses = []
         self.experiment_analyses = []
 
-    def add_treatment(self, name, parameters, challenges, replicates):
+    def add_treatment(self, name, parameters, replicates, **kwargs):
         log.info("Adding treatment '%s' to Experiment '%s', with %d replicates",
                  name, self.name, replicates)
-        self.treatments.append(Treatment(self, name, replicates, parameters, challenges))
+        self.treatments.append(Treatment(self, name, replicates, parameters, **kwargs))
 
 
     def load_plugin(self, plugin_cls, kwargs):
@@ -69,14 +69,14 @@ class Experiment(object):
 
 
 class Treatment(object):
-    def __init__(self, experiment, name, rcount, parameters, challenges):
+    def __init__(self, experiment, name, rcount, parameters, **kwargs):
         self.experiment = experiment
         self.sim_class = experiment.config.sim_class
         self.name = name
         self.replicate = None
         self.replicate_count = rcount
         self.parameters = parameters
-        self.challenges = challenges
+        self.extra_args = kwargs
 
     def run(self, e_analyses, e_callbacks, progress=None):
 
@@ -111,7 +111,9 @@ class Treatment(object):
                  self.replicate + 1,
                  self.replicate_count)))
 
-        sim = self.sim_class(self.parameters, self.challenges, self.name, self.replicate)
+        sim = self.sim_class(self.parameters, self.name, self.replicate)
+        for k, v in self.extra_args:
+            setattr(sim, k, v)
 
         r_analyses = []
         for cls, kwargs in self.experiment.replicate_analyses:

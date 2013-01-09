@@ -25,16 +25,10 @@ class BaseProgress(object):
 
 
 class Simulation(object):
-    def __init__(self, parameters, challenges, treatment=None, replicate=None):
+    def __init__(self, parameters, treatment=None, replicate=None):
         """Construction a simulation.
-
-        This brings populations and challenges together
-        Both progress and analyses are optional.
         """
         self.parameters = parameters
-        self.challenges = challenges
-        self.challenge_index = -1
-
         self.treatment = treatment
         self.replicate = replicate
         if self.treatment is not None and self.replicate is not None:
@@ -44,7 +38,18 @@ class Simulation(object):
 
         self.time_step = 0
 
+    def begin(self):
+        pass
+
+    def end(self):
+        pass
+
+    def step(self):
+        raise NotImplementedError
+
     def run(self, callbacks=None, progress=None):
+        self.begin()
+
         if progress:
             progress.begin(self)
 
@@ -73,6 +78,4 @@ class Simulation(object):
         if progress:
             progress.end(self)
 
-
-    def step(self):
-        raise NotImplementedError
+        self.end()

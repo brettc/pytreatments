@@ -28,7 +28,7 @@ class Context(object):
             if hasattr(attr, 'scripted'):
                 self.namespace[name] = attr
 
-        self.load_namespace()
+        self.load_namespace(self.namespace)
 
     def load_namespace(self):
         raise NotImplementedError
@@ -39,9 +39,9 @@ class Context(object):
     # -------------------------------------------------
     # Scripted functions available to config file
     @scripted
-    def add_treatment(self, name, p, challenges, replicates=1):
+    def add_treatment(self, name, p, replicates=1, **kwargs):
         # Duplicate the parameters so that they can't be changed
-        self.config.experiment.add_treatment(name, p, challenges, replicates)
+        self.config.experiment.add_treatment(name, p, replicates, **kwargs)
 
     @scripted
     def load_plugin(self, cls, **kwargs):

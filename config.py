@@ -21,7 +21,7 @@ class Configuration(object):
         self.init_logger(self.output_path)
 
         # Creat a cache path
-        # self.cache_path = self.make_dir('.cache')
+        self.cache_path = self.make_dir('.cache')
 
         # Make an experiment
         self.experiment = Experiment(self, name)
