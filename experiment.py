@@ -28,8 +28,8 @@ class Experiment(object):
     def load_plugin(self, plugin_cls, kwargs):
         """Add some analyses to run both during and after the simulation"""
         # if ExperimentPlugin in plugin_cls.__subclasses__():
-        log.info("Loading PLUGIN '%s' into Experiment '%s'",
-                 plugin_cls.__name__, self.name)
+        log.info("Loading PLUGIN: priority {0.priority}, name '{0.__name__}'".format(
+                 plugin_cls))
         if issubclass(plugin_cls, TreatmentPlugin):
             self.treatment_analyses.append((plugin_cls, kwargs))
         if issubclass(plugin_cls, ReplicatePlugin):
