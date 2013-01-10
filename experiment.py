@@ -2,9 +2,9 @@ import logging
 log = logging.getLogger("experiment")
 
 from itertools import chain
-from simulation import Simulation
 from plugin import TreatmentPlugin, ReplicatePlugin, ExperimentPlugin
 import random
+
 
 class Experiment(object):
     def __init__(self, config, name):
@@ -19,10 +19,11 @@ class Experiment(object):
         self.experiment_analyses = []
 
     def add_treatment(self, name, parameters, replicates, **kwargs):
-        log.info("Adding treatment '%s' to Experiment '%s', with %d replicates",
-                 name, self.name, replicates)
-        self.treatments.append(Treatment(self, name, replicates, parameters, **kwargs))
-
+        log.info(
+            "Adding treatment '%s' to Experiment '%s', with %d replicates",
+            name, self.name, replicates)
+        self.treatments.append(
+            Treatment(self, name, replicates, parameters, **kwargs))
 
     def load_plugin(self, plugin_cls, kwargs):
         """Add some analyses to run both during and after the simulation"""
@@ -67,7 +68,6 @@ class Experiment(object):
                 c.end_experiment()
 
 
-
 class Treatment(object):
     def __init__(self, experiment, name, rcount, parameters, **kwargs):
         self.experiment = experiment
@@ -92,7 +92,8 @@ class Treatment(object):
 
         for c in chain(e_analyses, t_analyses):
             if hasattr(c, 'begin_treatment'):
-                log.debug("Begin Treatment processing for PLUGIN '%s'" % c.name)
+                log.debug(
+                    "Begin Treatment processing for PLUGIN '%s'" % c.name)
                 c.begin_treatment()
 
         # Run all the replicates
@@ -112,7 +113,7 @@ class Treatment(object):
                  self.replicate_count)))
 
         sim = self.sim_class(self.parameters, self.name, self.replicate)
-        for k, v in self.extra_args:
+        for k, v in self.extra_args.items():
             setattr(sim, k, v)
 
         sim.begin()
@@ -127,7 +128,8 @@ class Treatment(object):
 
         for c in chain(e_analyses, t_analyses, r_analyses):
             if hasattr(c, 'begin_replicate'):
-                log.debug("Begin Replicate processing for PLUGIN '%s'" % c.name)
+                log.debug(
+                    "Begin Replicate processing for PLUGIN '%s'" % c.name)
                 c.begin_replicate(sim)
 
         sim.run(callbacks, progress)
