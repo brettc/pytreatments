@@ -36,9 +36,6 @@ class ExperimentPlugin(Plugin):
     def make_output_path(self):
         self.output_path = self.config.output_path
 
-    def make_part_name(self, nm):
-        return nm
-
 
 class TreatmentPlugin(Plugin):
     def __init__(self, config, treatment):
@@ -51,11 +48,6 @@ class TreatmentPlugin(Plugin):
             if not os.path.exists(self.output_path):
                 log.debug("Making path %s", self.output_path)
                 os.makedirs(self.output_path)
-
-    def make_part_name(self, nm):
-        nm, ext = os.path.splitext(nm)
-        name = "%s_%s%s" % (self.treatment.name, nm, ext)
-        return name
 
 
 class ReplicatePlugin(Plugin):
@@ -74,11 +66,6 @@ class ReplicatePlugin(Plugin):
                 log.debug("Making path %s", self.output_path)
                 os.makedirs(self.output_path)
 
-    def make_part_name(self, nm):
-        nm, ext = os.path.splitext(nm)
-        name = "%s-%04d-%s%s" % (
-            self.treatment.name, self.treatment.replicate, nm, ext)
-        return name
 
 # This allows us to export them to the namespace in the config_loader
 plugin_classes = set()

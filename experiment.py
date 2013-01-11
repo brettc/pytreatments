@@ -6,6 +6,11 @@ from plugin import TreatmentPlugin, ReplicatePlugin, ExperimentPlugin
 import random
 
 
+class Interrupt(Exception):
+    """Use this to stop an experiment"""
+    pass
+
+
 class Experiment(object):
     def __init__(self, config, name):
         self.config = config
@@ -47,8 +52,10 @@ class Experiment(object):
         callbacks = []
         e_analyses = []
 
+        # Order the all
         self.order_by_priority()
 
+        # Create any ExperimentPlugins
         for cls, kwargs in self.experiment_analyses:
             c = cls(self.config)
             c.__dict__.update(kwargs)
@@ -78,13 +85,11 @@ class Treatment(object):
         self.experiment = experiment
         self.sim_class = experiment.config.sim_class
         self.name = name
-        self.replicate = None
-        self.replicate_count = rcount
+        self.rcount = rcount
         self.parameters = parameters
         self.extra_args = kwargs
 
     def run(self, e_analyses, e_callbacks, progress=None):
-
         # Set up and run the treatment_analyses
         t_analyses = []
         callbacks = e_callbacks[:]
@@ -102,9 +107,9 @@ class Treatment(object):
                 c.begin_treatment()
 
         # Run all the replicates
-        for i in range(self.replicate_count):
+        for i in range(self.rcount):
             self.replicate = i
-            self.run_replicate(e_analyses, t_analyses, callbacks[:], progress)
+            self.run_replicate(i, e_analyses, t_analyses, callbacks[:], progress)
 
         # Treatment processing
         for c in chain(t_analyses, e_analyses):
@@ -118,11 +123,11 @@ class Treatment(object):
                 log.debug("unloading PLUGIN '%s'..." % c.name)
                 c.unload()
 
-    def run_replicate(self, e_analyses, t_analyses, callbacks, progress):
+    def run_replicate(self, r_i, e_analyses, t_analyses, callbacks, progress):
         log.info("{:-<78}".format("Begin Treatment '%s', replicate %d of %d" % (
                  self.name,
-                 self.replicate + 1,
-                 self.replicate_count)))
+                 r_i,
+                 self.rcount)))
 
         sim = self.sim_class(self.parameters, self.name, self.replicate)
         for k, v in self.extra_args.items():
@@ -157,8 +162,3 @@ class Treatment(object):
             if hasattr(c, 'unload'):
                 log.debug("unloading PLUGIN '%s'..." % c.name)
                 c.unload()
-
-        # log.info("{:-<78}".format("End Treatment '%s', replicate %d of %d" % (
-                 # self.name,
-                 # self.replicate + 1,
-                 # self.replicate_count)))
