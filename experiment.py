@@ -62,10 +62,15 @@ class Experiment(object):
         for t in self.treatments:
             t.run(e_analyses, callbacks, progress)
 
-        for c in reversed(e_analyses):
+        for c in e_analyses:
             if hasattr(c, 'end_experiment'):
                 log.info("end experiment analysis '%s'", c.name)
                 c.end_experiment()
+
+        for c in reversed(e_analyses):
+            if hasattr(c, 'unload'):
+                log.debug("unloading PLUGIN '%s'..." % c.name)
+                c.unload()
 
 
 class Treatment(object):
@@ -101,10 +106,17 @@ class Treatment(object):
             self.replicate = i
             self.run_replicate(e_analyses, t_analyses, callbacks[:], progress)
 
-        for c in chain(reversed(t_analyses), reversed(e_analyses)):
+        # Treatment processing
+        for c in chain(t_analyses, e_analyses):
             if hasattr(c, 'end_treatment'):
                 c.end_treatment()
                 log.debug("End Treatment processing for PLUGIN '%s'" % c.name)
+
+        # Let them unload themselves if needed
+        for c in reversed(t_analyses):
+            if hasattr(c, 'unload'):
+                log.debug("unloading PLUGIN '%s'..." % c.name)
+                c.unload()
 
     def run_replicate(self, e_analyses, t_analyses, callbacks, progress):
         log.info("{:-<78}".format("Begin Treatment '%s', replicate %d of %d" % (
@@ -129,19 +141,22 @@ class Treatment(object):
         for c in chain(e_analyses, t_analyses, r_analyses):
             if hasattr(c, 'begin_replicate'):
                 log.debug(
-                    "Begin Replicate processing for PLUGIN '%s'" % c.name)
+                    "begin_replicate processing for PLUGIN '%s'..." % c.name)
                 c.begin_replicate(sim)
 
         sim.run(callbacks, progress)
 
-        for c in chain(reversed(r_analyses),
-                       reversed(t_analyses),
-                       reversed(e_analyses)):
+        for c in chain(r_analyses, t_analyses, e_analyses):
             if hasattr(c, 'end_replicate'):
+                log.debug("end_replicate Replicate processing for PLUGIN '%s'..." % c.name)
                 c.end_replicate(sim)
-                log.debug("End Replicate processing for PLUGIN '%s'" % c.name)
 
         sim.end()
+
+        for c in reversed(r_analyses):
+            if hasattr(c, 'unload'):
+                log.debug("unloading PLUGIN '%s'..." % c.name)
+                c.unload()
 
         # log.info("{:-<78}".format("End Treatment '%s', replicate %d of %d" % (
                  # self.name,
