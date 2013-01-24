@@ -129,7 +129,7 @@ class Treatment(object):
                  r_i,
                  self.rcount)))
 
-        sim = self.sim_class(self.parameters, self.name, self.replicate)
+        sim = self.sim_class(self.parameters, treatment=self.name, replicate=self.replicate)
         for k, v in self.extra_args.items():
             setattr(sim, k, v)
 
