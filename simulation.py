@@ -1,6 +1,8 @@
 import logging
 log = logging.getLogger("pytreatments.simulation")
 
+import active
+
 
 class Interrupt(Exception):
     pass
@@ -39,20 +41,22 @@ class Simulation(object):
         self.time_step = 0
 
     def begin(self):
-        pass
+        active.set_active(self)
+        self.on_begin()
 
     def end(self):
-        pass
+        self.on_end()
+        active.clear_active()
 
     def step(self):
-        raise NotImplementedError
+        self.more = self.on_step()
 
     def run(self, callbacks=None, progress=None):
         if progress:
             progress.begin(self)
 
         while 1:
-            self.more = self.step()
+            self.step()
 
             if callbacks:
                 for c in callbacks:
@@ -68,6 +72,7 @@ class Simulation(object):
             if not self.more:
                 break
 
+            # Update time step after we've done all the processing
             self.time_step += 1
             if self.time_step == self.parameters.max_steps:
                 log.warning("Reached max steps, ending simulation...")

@@ -3,6 +3,7 @@ log = logging.getLogger("experiment")
 
 from itertools import chain
 from plugin import TreatmentPlugin, ReplicatePlugin, ExperimentPlugin
+import active
 import random
 
 
@@ -86,6 +87,7 @@ class Treatment(object):
         for cls, kwargs in self.experiment.treatment_analyses:
             c = cls(self.experiment.config, self)
             c.__dict__.update(kwargs)
+
             t_analyses.append(c)
             if hasattr(c, 'step'):
                 callbacks.append(c.step)
@@ -142,6 +144,7 @@ class Treatment(object):
                 log.debug("End Replicate processing for PLUGIN '%s'" % c.name)
 
         sim.end()
+        del sim
 
         # log.info("{:-<78}".format("End Treatment '%s', replicate %d of %d" % (
                  # self.name,
