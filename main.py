@@ -39,7 +39,7 @@ def configure_logging():
     root.setLevel(logging.INFO)
 
 
-def main(sim_class, context_class, progress=None, parser=get_parser()):
+def run_main(sim_class, context_class, progress=None, parser=get_parser()):
     configure_logging()
     args = parser.parse_args()
 
