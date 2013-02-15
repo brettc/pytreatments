@@ -9,6 +9,7 @@ class Configuration(object):
     """This holds the user configuration info"""
 
     def __init__(self, sim_class, clean=False):
+        # TODO. Do something with this...
         self.random_seed = None
         self.sim_class = sim_class
         self.clean = clean

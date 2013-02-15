@@ -74,9 +74,6 @@ class Simulation(object):
 
             # Update time step after we've done all the processing
             self.time_step += 1
-            if self.time_step == self.parameters.max_steps:
-                log.warning("Reached max steps, ending simulation...")
-                break
 
         if progress:
             progress.end(self)

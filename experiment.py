@@ -3,7 +3,6 @@ log = logging.getLogger("experiment")
 
 from itertools import chain
 from plugin import TreatmentPlugin, ReplicatePlugin, ExperimentPlugin
-import active
 import random
 
 
@@ -19,12 +18,10 @@ class Experiment(object):
         self.treatment_analyses = []
         self.experiment_analyses = []
 
-    def add_treatment(self, name, parameters, replicates, **kwargs):
-        log.info(
-            "Adding treatment '%s' to Experiment '%s', with %d replicates",
-            name, self.name, replicates)
-        self.treatments.append(
-            Treatment(self, name, replicates, parameters, **kwargs))
+    def add_treatment(self, name, replicates, **kwargs):
+        log.info("Adding treatment '%s' to Experiment '%s', with %d replicates",
+                 name, self.name, replicates)
+        self.treatments.append(Treatment(self, name, replicates, **kwargs))
 
     def load_plugin(self, plugin_cls, kwargs):
         """Add some analyses to run both during and after the simulation"""
@@ -70,13 +67,12 @@ class Experiment(object):
 
 
 class Treatment(object):
-    def __init__(self, experiment, name, rcount, parameters, **kwargs):
+    def __init__(self, experiment, name, rcount, **kwargs):
         self.experiment = experiment
         self.sim_class = experiment.config.sim_class
         self.name = name
         self.replicate = None
         self.replicate_count = rcount
-        self.parameters = parameters
         self.extra_args = kwargs
 
     def run(self, e_analyses, e_callbacks, progress=None):
@@ -114,10 +110,8 @@ class Treatment(object):
                  self.replicate + 1,
                  self.replicate_count)))
 
-        sim = self.sim_class(self.parameters, self.name, self.replicate)
-        for k, v in self.extra_args.items():
-            setattr(sim, k, v)
-
+        sim = self.sim_class(treatment=self.name, replicate=self.replicate,
+                             **self.extra_args)
         sim.begin()
 
         r_analyses = []

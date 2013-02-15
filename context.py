@@ -25,9 +25,9 @@ class Context(object):
     def init(self, pth):
         self.config.init_from_script(pth)
 
-    def add_treatment(self, name, p, replicates=1, **kwargs):
+    def add_treatment(self, name, replicates=1, **kwargs):
         # Duplicate the parameters so that they can't be changed
-        self.config.experiment.add_treatment(name, p, replicates, **kwargs)
+        self.config.experiment.add_treatment(name, replicates, **kwargs)
 
     def load_plugin(self, cls, **kwargs):
         if cls not in plugin.plugin_classes:
