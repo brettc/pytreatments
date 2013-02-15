@@ -6,18 +6,15 @@ import logging
 log = logging.getLogger('active')
 
 sim = None
-param = None
 
 
 def set_active(s):
-    global sim, param
+    global sim
     if sim is not None:
         raise RuntimeError
     sim = s
-    param = sim.parameters
 
 
 def clear_active():
-    global sim, param
+    global sim
     sim = None
-    param = None
