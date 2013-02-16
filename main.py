@@ -8,7 +8,6 @@ import argparse
 import config
 import script
 import simulation
-# import getch
 
 
 def get_parser():
@@ -68,16 +67,14 @@ def run_main(sim_class, context_class, progress=None, parser=get_parser()):
         logging.getLogger("").setLevel(logging.DEBUG)
 
     if spt.load(script_path):
-        # cfg.validate()
-        # p = ConsoleProgress()
-        p = None
         try:
-            cfg.experiment.run(p)
+            cfg.experiment.run(progress)
             return 0
 
         except KeyboardInterrupt:
             log.error("User interrupted the Program")
         except simulation.Interrupt:
+            # An error should already have been printed
             pass
 
     return 1
