@@ -112,7 +112,7 @@ class Treatment(object):
 
         sim = self.sim_class(treatment=self.name, replicate=self.replicate,
                              **self.extra_args)
-        sim.begin()
+        sim._begin()
 
         r_analyses = []
         for cls, kwargs in self.experiment.replicate_analyses:
@@ -137,7 +137,7 @@ class Treatment(object):
                 c.end_replicate(sim)
                 log.debug("End Replicate processing for PLUGIN '%s'" % c.name)
 
-        sim.end()
+        sim._end()
         del sim
 
         # log.info("{:-<78}".format("End Treatment '%s', replicate %d of %d" % (

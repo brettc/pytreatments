@@ -39,23 +39,23 @@ class Simulation(object):
 
         self.time_step = 0
 
-    def begin(self):
+    def _begin(self):
         active.set_active(self)
-        self.on_begin()
+        self.begin()
 
-    def end(self):
-        self.on_end()
+    def _end(self):
+        self.end()
         active.clear_active()
 
-    def step(self):
-        self.more = self.on_step()
+    def _step(self):
+        self.more = self.step()
 
     def run(self, callbacks=None, progress=None):
         if progress:
             progress.begin(self)
 
         while 1:
-            self.step()
+            self._step()
 
             if callbacks:
                 for c in callbacks:
