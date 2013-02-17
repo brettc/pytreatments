@@ -43,9 +43,15 @@ class Simulation(object):
         active.set_active(self)
         self.begin()
 
+    def begin(self):
+        pass
+
     def _end(self):
         self.end()
         active.clear_active()
+
+    def end(self):
+        pass
 
     def _step(self):
         self.more = self.step()
