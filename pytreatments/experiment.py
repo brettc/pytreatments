@@ -15,7 +15,6 @@ class Experiment(object):
     def __init__(self, config, name):
         self.config = config
         self.name = name
-        self.seed = random.seed()
 
         self.treatments = []
 
@@ -23,9 +22,16 @@ class Experiment(object):
         self.treatment_analyses = []
         self.experiment_analyses = []
 
+        # We use this to generates seeds for all of the experiments
+        self.rand = random.Random()
+
+    def set_seed(self, seed):
+        self.rand.seed(seed)
+
     def add_treatment(self, name, replicates, **kwargs):
-        log.info("Adding treatment '%s' to Experiment '%s', with %d replicates",
-                 name, self.name, replicates)
+        log.info(
+            "Adding treatment '%s' to Experiment '%s', with %d replicates",
+            name, self.name, replicates)
         self.treatments.append(Treatment(self, name, replicates, **kwargs))
 
     def load_plugin(self, plugin_cls, kwargs):
@@ -108,7 +114,8 @@ class Treatment(object):
         # Run all the replicates
         for i in range(self.replicate_count):
             self.replicate = i
-            self.run_replicate(i, e_analyses, t_analyses, callbacks[:], progress)
+            self.run_replicate(
+                i, e_analyses, t_analyses, callbacks[:], progress)
 
         # Treatment processing
         for c in chain(t_analyses, e_analyses):
@@ -123,13 +130,17 @@ class Treatment(object):
                 c.unload()
 
     def run_replicate(self, r_i, e_analyses, t_analyses, callbacks, progress):
-        log.info("{:-<78}".format("Begin Treatment '%s', replicate %d of %d" % (
-                 self.name,
-                 r_i,
-                 self.replicate_count)))
+        seed = self.experiment.rand.randint(0, 1 << 32)
+        log.info("{:-<78}".format("Begin Treatment '%s', replicate %d of %d, seed %d" % (
+            self.name,
+            r_i,
+            self.replicate_count,
+            seed,
+        )))
 
-        sim = self.sim_class(treatment=self.name, replicate=self.replicate,
-                             **self.extra_args)
+        sim = self.sim_class(seed=seed, treatment=self.name,
+                replicate=self.replicate, **self.extra_args)
+
         sim._begin()
 
         r_analyses = []
@@ -154,6 +165,8 @@ class Treatment(object):
                 c.end_replicate(sim)
 
         sim._end()
+
+        # This might help shut some stuff down, before running the unloading...
         del sim
 
         for c in reversed(r_analyses):

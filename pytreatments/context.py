@@ -12,6 +12,7 @@ class Context(object):
         self.load_namespace(ns)
         ns['add_treatment'] = self.add_treatment
         ns['load_plugin'] = self.load_plugin
+        ns['set_seed'] = self.set_seed
 
         # Load the plugin class into the namespace
         for p in plugin.plugin_classes:
@@ -24,6 +25,9 @@ class Context(object):
 
     def init(self, pth):
         self.config.init_from_script(pth)
+
+    def set_seed(self, seed):
+        self.config.experiment.set_seed(seed)
 
     def add_treatment(self, name, replicates=1, **kwargs):
         # Duplicate the parameters so that they can't be changed

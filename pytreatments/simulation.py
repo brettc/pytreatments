@@ -27,9 +27,10 @@ class BaseProgress(object):
 
 
 class Simulation(object):
-    def __init__(self, treatment=None, replicate=None):
+    def __init__(self, seed=None, treatment=None, replicate=None):
         """Construction a simulation.
         """
+        self.seed = seed
         self.treatment = treatment
         self.replicate = replicate
         if self.treatment is not None and self.replicate is not None:
