@@ -20,8 +20,8 @@ class MyContext(Context):
 
 
 class MySimulation(Simulation):
-    def __init__(self, treatment, replicate, params):
-        Simulation.__init__(self, treatment, replicate)
+    def __init__(self, seed, treatment, replicate, params):
+        Simulation.__init__(self, seed, treatment, replicate)
         self.params = params
 
     def begin(self):
