@@ -31,14 +31,20 @@ class Plugin(object):
 class ExperimentPlugin(Plugin):
     def __init__(self, config):
         Plugin.__init__(self, config)
-        self.output_path = self.config.experiment.output_path
+        basepth = self.config.experiment.output_path
+        self.output_path = os.path.join(basepth, self.__class__.__name__)
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
 
 
 class TreatmentPlugin(Plugin):
     def __init__(self, config, treatment):
         Plugin.__init__(self, config)
         self.treatment = treatment
-        self.output_path = treatment.output_path
+        basepth = treatment.treatment_output_path
+        self.output_path = os.path.join(basepth, self.__class__.__name__)
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
 
 
 class ReplicatePlugin(Plugin):
@@ -46,7 +52,10 @@ class ReplicatePlugin(Plugin):
         Plugin.__init__(self, config)
         self.treatment = treatment
         self.replicate = treatment.replicate
-        self.output_path = treatment.replicate_output_path
+        basepth = treatment.replicate_output_path
+        self.output_path = os.path.join(basepth, self.__class__.__name__)
+        if not os.path.exists(self.output_path):
+            os.makedirs(self.output_path)
 
 
 # This allows us to export them to the namespace in the config_loader

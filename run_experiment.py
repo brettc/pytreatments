@@ -3,7 +3,8 @@ log = logging.getLogger("run_experiment")
 
 import sys
 from pytreatments import (
-    run_main, Context, Simulation, ReplicatePlugin, register_plugin
+    run_main, Context, Simulation,
+    register_plugin, TreatmentPlugin, ReplicatePlugin
 )
 
 
@@ -47,6 +48,14 @@ class simple_capture(ReplicatePlugin):
 
     def step(self, sim):
         self.output.write("stepping in sim %s" % sim.time_step)
+
+@register_plugin
+class nothing(TreatmentPlugin):
+    def begin_treatment(self):
+        self.output = self.get_file('yippeee.txt')
+
+    def begin_replicate(self, sim):
+        self.output.write("Another one\n")
 
 
 if __name__ == "__main__":
