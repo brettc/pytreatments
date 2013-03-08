@@ -34,7 +34,7 @@ class Script(object):
 
     def execute(self, pth):
         try:
-            log.info("{:-<78}".format("Loading Script %s" % pth))
+            log.info("{:-<78}".format("Begin Loading Script %s" % pth))
             execfile(pth, self.context.namespace)
 
         # TODO This is WAY too complex. Make it nicer
@@ -59,3 +59,5 @@ class Script(object):
             log.error("Unhandled exception in loading script: '%s'", pth)
             log.error(s)
             raise ScriptError(err)
+
+        log.info("{:-<78}".format("Finished Loading Script %s" % pth))

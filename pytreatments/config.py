@@ -13,6 +13,7 @@ class Configuration(object):
         self.history_class = history_class
         self.args = args
         self.base_path = None
+        self.script_path = None
         self.name = name
         self.experiment = Experiment(self)
 
@@ -20,7 +21,6 @@ class Configuration(object):
         base_path, name = os.path.split(pth)
         name, ext = os.path.splitext(name)
         self.base_path = base_path
-        self.name = name
         self.experiment.name = name
 
     def set_base_path(self, pth):
@@ -40,27 +40,13 @@ class Configuration(object):
             log.error("Base path '%s' does not exist", self.base_path)
             raise RuntimeError
 
-        self.output_path = self.make_output(self.name + '.output')
-        log.info("Setting output folder to '%s'", self.output_path)
+        self.make_output(self.experiment.name + '.output')
         self.init_logger(self.output_path)
 
-    # def init_from_script(self, script_path):
-        # """Load using a script file"""
-        # # Allow for user and environment variables
-
-        # base_path, name = os.path.split(script_path)
-        # name, ext = os.path.splitext(name)
-
-        # # OK, now initialise
-        # self.init(base_path, name)
-
-        # # We're going to stick a copy of the script into the output folder.
-        # # This is good for referring to later
-        # shutil.copy(script_path, self.output_path)
-
-    def validate(self):
-        """Should be called before processing"""
-        pass
+        if self.script_path:
+            # We're going to stick a copy of the script into the output folder.
+            # This is good for referring to later
+            shutil.copy(self.script_path, self.output_path)
 
     def make_output(self, pth):
         pth = os.path.join(self.base_path, pth)
@@ -78,7 +64,8 @@ class Configuration(object):
             os.mkdir(pth)
             log.info("Created folder '%s'", pth)
 
-        return pth
+        self.output_path = pth
+        log.info("Setting output folder to '%s'", self.output_path)
 
     def init_logger(self, pth):
         log_path = os.path.join(pth, "log.txt")
@@ -86,7 +73,9 @@ class Configuration(object):
         formatter = logging.Formatter(
             "%(levelname)-8s | %(asctime)s | %(name)-15s | %(message)s")
         handler.setFormatter(formatter)
-        handler.setLevel(logging.DEBUG)
+
+        # Actually, let's keep it trim...
+        handler.setLevel(logging.WARNING)
         logging.getLogger("").addHandler(handler)
         logging.getLogger("reporting").addHandler(handler)
 
