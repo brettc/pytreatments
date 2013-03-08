@@ -230,9 +230,7 @@ class Treatment(object):
         sim._begin()
 
         # Create a history class if we have one
-        if self.experiment.config.history_class is None:
-            sim.history = None
-        else:
+        if self.experiment.config.history_class is not None:
             sim.history = self.experiment.config.history_class(self.replicate_output_path, sim)
 
         r_plugin = []

@@ -38,6 +38,7 @@ class Simulation(object):
         else:
             self.description = ""
 
+        self.history = None
         self.time_step = 0
 
     def _begin(self):
