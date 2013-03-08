@@ -19,9 +19,12 @@ def get_parser():
         action="store_true", dest="verbose",
         help="show verbose (debug) output")
     parser.add_argument(
-        "-c", "--clean",
+        "--clean",
         action="store_true", dest="clean",
         help="Clean any previous output")
+    parser.add_argument(
+        "-o", "--output", type=str,
+        help="Provide a base folder for output (rather than the default)")
 
     return parser
 
@@ -66,16 +69,16 @@ def run_main(sim_class, context_class, history_class=None, progress=None, parser
     if args.verbose:
         logging.getLogger("").setLevel(logging.DEBUG)
 
-    if spt.load(script_path):
-        try:
-            cfg.experiment.run(progress)
-            cfg.experiment.analyse()
-            return 0
+    try:
+        spt.load(script_path)
+        cfg.experiment.run(progress)
+        cfg.experiment.analyse()
+        return 0
 
-        except KeyboardInterrupt:
-            log.error("User interrupted the Program")
-        except simulation.Interrupt:
-            # An error should already have been printed
-            pass
+    except KeyboardInterrupt:
+        log.error("User interrupted the Program")
+    except simulation.Interrupt:
+        # An error should already have been printed
+        pass
 
     return 1
