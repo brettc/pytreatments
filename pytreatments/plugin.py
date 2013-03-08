@@ -20,7 +20,6 @@ class Plugin(object):
         return open(pth, 'wb')
 
     def get_file_name(self, name):
-        self.make_output_path()
         pth = os.path.join(self.output_path, name)
         return pth
 
@@ -32,22 +31,14 @@ class Plugin(object):
 class ExperimentPlugin(Plugin):
     def __init__(self, config):
         Plugin.__init__(self, config)
-
-    def make_output_path(self):
-        self.output_path = self.config.output_path
+        self.output_path = self.config.experiment.output_path
 
 
 class TreatmentPlugin(Plugin):
     def __init__(self, config, treatment):
         Plugin.__init__(self, config)
         self.treatment = treatment
-
-    def make_output_path(self):
-        if self.output_path is None:
-            self.output_path = os.path.join(self.config.output_path, self.treatment.name)
-            if not os.path.exists(self.output_path):
-                log.debug("Making path %s", self.output_path)
-                os.makedirs(self.output_path)
+        self.output_path = treatment.output_path
 
 
 class ReplicatePlugin(Plugin):
@@ -55,16 +46,7 @@ class ReplicatePlugin(Plugin):
         Plugin.__init__(self, config)
         self.treatment = treatment
         self.replicate = treatment.replicate
-
-    def make_output_path(self):
-        if self.output_path is None:
-            self.output_path = os.path.join(self.config.output_path,
-                                            self.treatment.name,
-                                            "{:0>3}".format(self.replicate),
-                                            )
-            if not os.path.exists(self.output_path):
-                log.debug("Making path %s", self.output_path)
-                os.makedirs(self.output_path)
+        self.output_path = treatment.replicate_output_path
 
 
 # This allows us to export them to the namespace in the config_loader

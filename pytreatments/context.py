@@ -12,7 +12,7 @@ class Context(object):
         self.load_namespace(ns)
         ns['add_treatment'] = self.add_treatment
         ns['load_plugin'] = self.load_plugin
-        ns['set_seed'] = self.set_seed
+        ns['seed'] = self.set_seed
 
         # Load the plugin class into the namespace
         for p in plugin.plugin_classes:

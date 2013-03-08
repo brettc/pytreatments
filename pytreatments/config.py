@@ -8,12 +8,10 @@ from experiment import Experiment
 class Configuration(object):
     """This holds the user configuration info"""
 
-    def __init__(self, sim_class, clean=False):
-        # TODO. Do something with this...
-        self.random_seed = None
-
+    def __init__(self, sim_class, history_class, args):
         self.sim_class = sim_class
-        self.clean = clean
+        self.history_class = history_class
+        self.args = args
 
     def init(self, base_path, name):
         """Call this one if you're doing it programmatically"""
@@ -61,7 +59,7 @@ class Configuration(object):
 
         if os.path.exists(pth):
             if os.path.isdir(pth):
-                if self.clean:
+                if self.args.clean:
                     log.info("Removing existing folder '%s'", pth)
                     shutil.rmtree(pth)
             else:
