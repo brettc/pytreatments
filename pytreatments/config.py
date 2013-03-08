@@ -8,54 +8,62 @@ from experiment import Experiment
 class Configuration(object):
     """This holds the user configuration info"""
 
-    def __init__(self, sim_class, history_class, args):
+    def __init__(self, sim_class, history_class, args, name=None):
         self.sim_class = sim_class
         self.history_class = history_class
         self.args = args
+        self.base_path = None
+        self.name = name
+        self.experiment = Experiment(self)
 
-    def init(self, base_path, name):
-        """Call this one if you're doing it programmatically"""
+    def set_name_from_script(self, pth):
+        base_path, name = os.path.split(pth)
+        name, ext = os.path.splitext(name)
         self.base_path = base_path
-        self.output_path = self.make_dir(name + '.output')
+        self.name = name
+        self.experiment.name = name
+
+    def set_base_path(self, pth):
+        # Script can override this
+        self.base_path = pth
+
+    def init(self):
+        """Call this one if you're doing it programmatically"""
+
+        # Modify the base_path if we're told to
+        if self.args.output is not None:
+            self.base_path = self.args.output
+
+        self.base_path = os.path.expanduser(self.base_path)
+        self.base_path = os.path.normpath(self.base_path)
+        if not os.path.exists(self.base_path):
+            log.error("Base path '%s' does not exist", self.base_path)
+            raise RuntimeError
+
+        self.output_path = self.make_output(self.name + '.output')
         log.info("Setting output folder to '%s'", self.output_path)
         self.init_logger(self.output_path)
 
-        # Creat a cache path
-        self.cache_path = self.make_dir('.cache')
+    # def init_from_script(self, script_path):
+        # """Load using a script file"""
+        # # Allow for user and environment variables
 
-        # Make an experiment
-        self.experiment = Experiment(self, name)
+        # base_path, name = os.path.split(script_path)
+        # name, ext = os.path.splitext(name)
 
-    def init_from_script(self, script_path):
-        """Load using a script file"""
-        # Allow for user and environment variables
-        script_path = os.path.expanduser(script_path)
-        script_path = os.path.expandvars(script_path)
-        script_path = os.path.normpath(script_path)
+        # # OK, now initialise
+        # self.init(base_path, name)
 
-        if not os.path.exists(script_path) or \
-                not os.path.isfile(script_path):
-            log.error("The script file '%s' does not exist", script_path)
-            raise RuntimeError
-
-        base_path, name = os.path.split(script_path)
-        name, ext = os.path.splitext(name)
-        self.init(base_path, name)
-
-        # We're going to stick a copy of the script into the output folder.
-        # This is good for referring to later
-        shutil.copy(script_path, self.output_path)
+        # # We're going to stick a copy of the script into the output folder.
+        # # This is good for referring to later
+        # shutil.copy(script_path, self.output_path)
 
     def validate(self):
         """Should be called before processing"""
         pass
 
-    def make_dir(self, nm):
-        if hasattr(self, 'output_path'):
-            start = self.output_path
-        else:
-            start = self.base_path
-        pth = os.path.join(start, nm)
+    def make_output(self, pth):
+        pth = os.path.join(self.base_path, pth)
 
         if os.path.exists(pth):
             if os.path.isdir(pth):

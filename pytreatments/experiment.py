@@ -8,6 +8,8 @@ import random
 
 RUNNING = "RUNNING"
 COMPLETE = "COMPLETE"
+SEED = "SEED"
+
 
 class Interrupt(Exception):
     """Use this to stop an experiment"""
@@ -15,9 +17,9 @@ class Interrupt(Exception):
 
 
 class Experiment(object):
-    def __init__(self, config, name):
+    def __init__(self, config):
         self.config = config
-        self.name = name
+        self.name = None
 
         self.treatments = []
 
@@ -27,7 +29,6 @@ class Experiment(object):
 
         # We use this to generates seeds for all of the experiments
         self.rand = random.Random()
-        self.output_path = self.config.output_path
 
     def set_seed(self, seed):
         self.rand.seed(seed)
@@ -61,6 +62,7 @@ class Experiment(object):
         return os.path.join(self.output_path, RUNNING)
 
     def run_begin(self):
+        self.output_path = self.config.output_path
         open(self.experiment_mark, 'a').close()
 
     def run_end(self):
@@ -132,15 +134,15 @@ class Treatment(object):
         self.replicate = None
         self.replicate_count = rcount
         self.extra_args = kwargs
-        self.treatment_output_path = os.path.join(
-            self.experiment.output_path, self.name)
-        self.experiment.make_path(self.treatment_output_path)
 
     @property
     def treatment_mark(self):
         return os.path.join(self.treatment_output_path, RUNNING)
 
     def run_begin(self):
+        self.treatment_output_path = os.path.join(
+            self.experiment.output_path, self.name)
+        self.experiment.make_path(self.treatment_output_path)
         open(self.treatment_mark, 'a').close()
 
     def run_end(self):

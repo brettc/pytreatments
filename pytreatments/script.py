@@ -1,6 +1,7 @@
 import logging
 log = logging.getLogger("script")
 
+import os
 import traceback
 import sys
 import cStringIO
@@ -15,10 +16,26 @@ class Script(object):
         self.context = context
 
     def load(self, pth):
-        self.context.init(pth)
+        pth = os.path.expanduser(pth)
+        pth = os.path.normpath(pth)
+        if not os.path.exists(pth) or \
+                not os.path.isfile(pth):
+            log.error("The script file '%s' does not exist", pth)
+            raise RuntimeError
+
+        # We need to set some stuff in the Experiment first
+        self.context.config.set_name_from_script(pth)
+
+        # ... then execute this (which can change the config)
+        self.execute(pth)
+
+        # Now continue the initialisation
+        self.context.config.init()
+
+    def execute(self, pth):
         try:
             log.info("{:-<78}".format("Loading Script %s" % pth))
-            execfile('%s' % pth, self.context.namespace)
+            execfile(pth, self.context.namespace)
 
         # TODO This is WAY too complex. Make it nicer
         except SyntaxError, err:
@@ -42,8 +59,3 @@ class Script(object):
             log.error("Unhandled exception in loading script: '%s'", pth)
             log.error(s)
             raise ScriptError(err)
-        else:
-            # log.info("{:-<78}".format("Finished loading Script %s" % pth))
-            return True
-
-        return False
