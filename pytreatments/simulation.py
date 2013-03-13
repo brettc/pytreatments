@@ -1,9 +1,6 @@
 import logging
 log = logging.getLogger("pytreatments.simulation")
 
-import active
-
-
 class Interrupt(Exception):
     pass
 
@@ -42,7 +39,6 @@ class Simulation(object):
         self.time_step = 0
 
     def _begin(self):
-        active.set_active(self)
         self.begin()
 
     def begin(self):
@@ -50,7 +46,6 @@ class Simulation(object):
 
     def _end(self):
         self.end()
-        active.clear_active()
 
     def end(self):
         pass
