@@ -16,12 +16,18 @@ class Plugin(object):
     def get_file(self, name):
         """Makes a file and puts it in the appropriate place"""
         pth = self.get_file_name(name)
-        log.info("creating %s", pth)
+        # log.info("creating %s", pth)
         return open(pth, 'wb')
 
     def get_file_name(self, name):
         pth = os.path.join(self.output_path, name)
+        log.info("Acquiring file name '%s'", pth)
         return pth
+
+    def make_output_folder(self):
+        if not os.path.exists(self.output_path):
+            log.info("Making folder '%s'", self.output_path)
+            os.makedirs(self.output_path)
 
     @property
     def name(self):
@@ -33,8 +39,7 @@ class ExperimentPlugin(Plugin):
         Plugin.__init__(self, config)
         basepth = self.config.experiment.output_path
         self.output_path = os.path.join(basepth, self.__class__.__name__)
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
+        self.make_output_folder()
 
 
 class TreatmentPlugin(Plugin):
@@ -43,8 +48,7 @@ class TreatmentPlugin(Plugin):
         self.treatment = treatment
         basepth = treatment.treatment_output_path
         self.output_path = os.path.join(basepth, self.__class__.__name__)
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
+        self.make_output_folder()
 
 
 class ReplicatePlugin(Plugin):
@@ -54,8 +58,7 @@ class ReplicatePlugin(Plugin):
         self.replicate = treatment.replicate
         basepth = treatment.replicate_output_path
         self.output_path = os.path.join(basepth, self.__class__.__name__)
-        if not os.path.exists(self.output_path):
-            os.makedirs(self.output_path)
+        self.make_output_folder()
 
 
 # This allows us to export them to the namespace in the config_loader

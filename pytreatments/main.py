@@ -72,7 +72,7 @@ def run_main(sim_class, context_class, history_class=None, progress=None, parser
     try:
         spt.load(script_path)
         cfg.experiment.run(progress)
-        cfg.experiment.analyse()
+        # cfg.experiment.analyse()
         return 0
 
     except KeyboardInterrupt:

@@ -57,20 +57,22 @@ class Experiment(object):
                   self.experiment_plugin):
             c.sort(key=lambda x: x[0].priority)
 
-    @property
-    def experiment_mark(self):
-        return os.path.join(self.output_path, RUNNING)
+    # @property
+    # def experiment_mark(self):
+        # return os.path.join(self.output_path, RUNNING)
 
     def run_begin(self):
-        self.output_path = self.config.output_path
-        open(self.experiment_mark, 'a').close()
-
-    def run_end(self):
-        os.unlink(self.experiment_mark)
-
-    def run(self, progress):
         text = "Beginning Simulations"
         log.info("{:=<78}".format(text))
+        self.output_path = self.config.output_path
+        # open(self.experiment_mark, 'a').close()
+
+    def run_end(self):
+        text = "Ending Simulations"
+        log.info("{:=<78}".format(text))
+        # os.unlink(self.experiment_mark)
+
+    def run(self, progress):
 
         callbacks = []
         e_plugin = []
@@ -135,18 +137,19 @@ class Treatment(object):
         self.replicate_count = rcount
         self.extra_args = kwargs
 
-    @property
-    def treatment_mark(self):
-        return os.path.join(self.treatment_output_path, RUNNING)
+    # @property
+    # def treatment_mark(self):
+        # return os.path.join(self.treatment_output_path, RUNNING)
 
     def run_begin(self):
         self.treatment_output_path = os.path.join(
             self.experiment.output_path, self.name)
         self.experiment.make_path(self.treatment_output_path)
-        open(self.treatment_mark, 'a').close()
+        # open(self.treatment_mark, 'a').close()
 
     def run_end(self):
-        os.unlink(self.treatment_mark)
+        pass
+        # os.unlink(self.treatment_mark)
 
     def run(self, e_plugin, e_callbacks, progress=None):
         # Set up and run the treatment_plugin
@@ -174,6 +177,7 @@ class Treatment(object):
             self.replicate = i
             self.run_replicate(
                 i, e_plugin, t_plugin, callbacks[:], progress)
+            self.analyse_replicate()
 
         # Treatment processing
         for c in chain(t_plugin, e_plugin):
@@ -285,7 +289,11 @@ class Treatment(object):
     def analyse_replicate(self):
         text = "Treatment '%s', replicate %d of %d" % (
             self.name, self.replicate, self.replicate_count)
-        log.info("{:-<78}".format("Analysing %s" % text))
+        log.info("{:.<78}".format("Analysing %s" % text))
+
+        if self.experiment.config.history_class is None:
+            log.warning("No analysis possible as there no history class")
+            return
 
         r_analyses = []
         for cls, kwargs in self.experiment.replicate_plugin:
