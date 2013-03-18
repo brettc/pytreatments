@@ -42,7 +42,7 @@ class Configuration(object):
             log.error("Base path '%s' does not exist", self.base_path)
             raise RuntimeError
 
-        self.make_output(self.experiment.name + '.output')
+        self.make_experiment_folder(self.experiment.name + '.output')
         self.init_logger(self.output_path)
 
         if self.script_path:
@@ -96,7 +96,7 @@ class Configuration(object):
         print
         return resp
 
-    def make_output(self, pth):
+    def make_experiment_folder(self, pth):
         pth = os.path.join(self.base_path, pth)
 
         if os.path.exists(pth):
