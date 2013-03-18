@@ -107,21 +107,6 @@ class Experiment(object):
 
         self.run_end()
 
-    def analyse(self):
-        if self.config.history_class is None:
-            log.warning("Post analysis not possible as there is not history class")
-            return
-        text = "Beginning Analyses"
-        log.info("{:=<78}".format(text))
-
-        # for cls, kwargs in self.experiment_plugin:
-            # if hasattr(cls, 'analyse'):
-                # c = cls(self.config)
-                # c.__dict__.update(kwargs)
-
-        for t in self.treatments:
-            t.analyse()
-
     def make_path(self, pth):
         if not os.path.exists(pth):
             log.debug("Making path %s", pth)
@@ -175,8 +160,10 @@ class Treatment(object):
         # Run all the replicates
         for i in range(self.replicate_count):
             self.replicate = i
-            self.run_replicate(
-                i, e_plugin, t_plugin, callbacks[:], progress)
+            # Just analyse?
+            if not self.experiment.config.analysis_only:
+                self.run_replicate(
+                    i, e_plugin, t_plugin, callbacks[:], progress)
             self.analyse_replicate()
 
         # Treatment processing
@@ -275,25 +262,20 @@ class Treatment(object):
 
         self.replicate_run_end()
 
-    def analyse(self):
-        # for cls, kwargs in self.experiment.treatment_plugin:
-            # if hasattr(cls, 'analyse'):
-                # c = cls(self.experiment.config, self)
-                # c.__dict__.update(kwargs)
-                # c.analyse()
-
-        for i in range(self.replicate_count):
-            self.replicate = i
-            self.analyse_replicate()
 
     def analyse_replicate(self):
-        text = "Treatment '%s', replicate %d of %d" % (
-            self.name, self.replicate, self.replicate_count)
-        log.info("{:.<78}".format("Analysing %s" % text))
-
         if self.experiment.config.history_class is None:
             log.warning("No analysis possible as there no history class")
             return
+
+        text = "Treatment '%s', replicate %d of %d" % (
+            self.name, self.replicate, self.replicate_count)
+
+        if not os.path.exists(self.replicate_output_path):
+            log.warning("{:.<78}".format("Cannot Analyse Unfinished %s" % text))
+            return
+
+        log.info("{:.<78}".format("Analysing %s" % text))
 
         r_analyses = []
         for cls, kwargs in self.experiment.replicate_plugin:
@@ -304,5 +286,5 @@ class Treatment(object):
 
         hist = self.experiment.config.history_class(self.replicate_output_path)
         for a in r_analyses:
-            a.analyse(hist)
+            a.do_analyse(hist)
 

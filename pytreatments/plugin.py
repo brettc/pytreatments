@@ -3,6 +3,8 @@ log = logging.getLogger("plugin")
 
 import os
 
+ANALYSED = 'ANALYSED'
+
 
 class Plugin(object):
 
@@ -28,6 +30,10 @@ class Plugin(object):
         if not os.path.exists(self.output_path):
             log.info("Making folder '%s'", self.output_path)
             os.makedirs(self.output_path)
+
+    @property
+    def analysed_mark(self):
+        return os.path.join(self.output_path, ANALYSED)
 
     @property
     def name(self):
@@ -60,6 +66,13 @@ class ReplicatePlugin(Plugin):
         self.output_path = os.path.join(basepth, self.__class__.__name__)
         self.make_output_folder()
 
+    def do_analyse(self, history):
+        if os.path.exists(self.analysed_mark):
+            log.info("Analysis already complete in '%s'", self.output_path)
+            return
+
+        self.analyse(history)
+        open(self.analysed_mark, 'a').close()
 
 # This allows us to export them to the namespace in the config_loader
 plugin_classes = set()

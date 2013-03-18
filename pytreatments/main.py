@@ -18,14 +18,25 @@ def get_parser():
         "-v", "--verbose",
         action="store_true", dest="verbose",
         help="show verbose (debug) output")
-    parser.add_argument(
-        "--clean",
-        action="store_true", dest="clean",
-        help="Clean any previous output")
+
     parser.add_argument(
         "-o", "--output", type=str,
-        help="Provide a base folder for output (rather than the default)")
+        help="Provide a base folder for output (overrides script definition)")
 
+    # Mutually exclusive options about what to do with existing stuff
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--continue",
+        action="store_true", dest="keepgoing",
+        help="Continue an existing experiment")
+    group.add_argument(
+        "--analysis",
+        action="store_true", dest="analysis",
+        help="Analyse an existing experiment")
+    group.add_argument(
+        "--restart",
+        action="store_true", dest="restart",
+        help="Restart the experiment (losing any previous output)")
     return parser
 
 
@@ -72,8 +83,6 @@ def run_main(sim_class, context_class, history_class=None, progress=None, parser
     try:
         spt.load(script_path)
         cfg.experiment.run(progress)
-        # cfg.experiment.analyse()
-        return 0
 
     except KeyboardInterrupt:
         log.error("User interrupted the Program")

@@ -3,6 +3,7 @@ log = logging.getLogger("config")
 import os
 import shutil
 from experiment import Experiment
+from simulation import Interrupt
 
 
 class Configuration(object):
@@ -15,6 +16,7 @@ class Configuration(object):
         self.base_path = None
         self.script_path = None
         self.name = name
+        self.analysis_only = False
         self.experiment = Experiment(self)
 
     def set_name_from_script(self, pth):
@@ -53,9 +55,25 @@ class Configuration(object):
 
         if os.path.exists(pth):
             if os.path.isdir(pth):
-                if self.args.clean:
-                    log.info("Removing existing folder '%s'", pth)
+                # We already have an experiment. Users must be explicit about
+                # what to do.
+                if self.args.restart:
+                    log.info("Removing existing experiment in '%s' and "
+                             "restarting", pth)
                     shutil.rmtree(pth)
+
+                elif self.args.keepgoing:
+                    log.info("Continuing the experiment already in '%s'", pth)
+
+                elif self.args.analysis:
+                    log.info("Analysing existing experiment in '%s'", pth)
+                    self.analysis_only = True
+
+                else:
+                    log.error("An experiment already exists in '%s'. ", pth)
+                    log.error("You must specify whether to restart, "
+                              "continue, or analyse the existing experiment")
+                    raise Interrupt
             else:
                 log.error("Cannot create folder '%s'", pth)
                 raise RuntimeError
