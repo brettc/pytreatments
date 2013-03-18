@@ -23,6 +23,10 @@ def get_parser():
         "-o", "--output", type=str,
         help="Provide a base folder for output (overrides script definition)")
 
+    parser.add_argument(
+        "-R", "--redo", action="store_true", dest="reanalyse",
+        help="Redo the analyses (only with the analysis option)")
+
     # Mutually exclusive options about what to do with existing stuff
     group = parser.add_mutually_exclusive_group()
     group.add_argument(

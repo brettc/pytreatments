@@ -68,8 +68,9 @@ class ReplicatePlugin(Plugin):
 
     def do_analyse(self, history):
         if os.path.exists(self.analysed_mark):
-            log.info("Analysis already complete in '%s'", self.output_path)
-            return
+            if not self.config.args.reanalyse:
+                log.info("Analysis already complete in '%s'", self.output_path)
+                return
 
         self.analyse(history)
         open(self.analysed_mark, 'a').close()

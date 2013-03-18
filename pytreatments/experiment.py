@@ -271,7 +271,7 @@ class Treatment(object):
         text = "Treatment '%s', replicate %d of %d" % (
             self.name, self.replicate, self.replicate_count)
 
-        if not os.path.exists(self.replicate_output_path):
+        if not os.path.exists(self.complete_mark):
             log.warning("{:.<78}".format("Cannot Analyse Unfinished %s" % text))
             return
 
