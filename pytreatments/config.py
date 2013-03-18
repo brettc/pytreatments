@@ -50,6 +50,52 @@ class Configuration(object):
             # This is good for referring to later
             shutil.copy(self.script_path, self.output_path)
 
+    ## {{{ http://code.activestate.com/recipes/541096/ (r1)
+    def confirm(self, prompt=None, resp=False):
+        """prompts for yes or no response from the user. Returns True for yes and
+        False for no.
+
+        'resp' should be set to the default value assumed by the caller when
+        user simply types ENTER.
+
+        >>> confirm(prompt='Create Directory?', resp=True)
+        Create Directory? [y]|n:
+        True
+        >>> confirm(prompt='Create Directory?', resp=False)
+        Create Directory? [n]|y:
+        False
+        >>> confirm(prompt='Create Directory?', resp=False)
+        Create Directory? [n]|y: y
+        True
+
+        """
+
+        if prompt is None:
+            prompt = 'Confirm'
+
+        if resp:
+            prompt = '%s [%s]|%s: ' % (prompt, 'y', 'n')
+        else:
+            prompt = '%s [%s]|%s: ' % (prompt, 'n', 'y')
+
+        while True:
+            ans = raw_input(prompt)
+            if not ans:
+                break
+            if ans not in ['y', 'Y', 'n', 'N']:
+                print 'please enter y or n.'
+                continue
+            if ans == 'y' or ans == 'Y':
+                resp = True
+                break
+            if ans == 'n' or ans == 'N':
+                resp = False
+                break
+
+        # Get rid of line
+        print
+        return resp
+
     def make_output(self, pth):
         pth = os.path.join(self.base_path, pth)
 
@@ -58,9 +104,13 @@ class Configuration(object):
                 # We already have an experiment. Users must be explicit about
                 # what to do.
                 if self.args.restart:
-                    log.info("Removing existing experiment in '%s' and "
-                             "restarting", pth)
-                    shutil.rmtree(pth)
+                    resp = self.confirm("Are you sure you want remove everything in '%s'" % pth)
+                    if resp:
+                        log.info("Removing existing experiment in '%s' and "
+                                "restarting", pth)
+                        shutil.rmtree(pth)
+                    else:
+                        raise Interrupt
 
                 elif self.args.keepgoing:
                     log.info("Continuing the experiment already in '%s'", pth)
