@@ -24,8 +24,12 @@ def get_parser():
         help="Provide a base folder for output (overrides script definition)")
 
     parser.add_argument(
-        "-R", "--redo", action="store_true", dest="reanalyse",
+        "-R", "--redo-analyses", action="store_true", dest="reanalyse",
         help="Redo the analyses (only with the analysis option)")
+
+    parser.add_argument(
+        "--dont-ask", action="store_true", dest="dont_ask",
+        help="Don't ask for verification on deletion, just do it")
 
     # Mutually exclusive options about what to do with existing stuff
     group = parser.add_mutually_exclusive_group()

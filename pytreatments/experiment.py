@@ -62,14 +62,14 @@ class Experiment(object):
         # return os.path.join(self.output_path, RUNNING)
 
     def run_begin(self):
-        text = "Beginning Simulations"
-        log.info("{:=<78}".format(text))
+        text = "Experiment:'{}'".format(self.name)
+        log.info("{:=^78}".format(text))
         self.output_path = self.config.output_path
         # open(self.experiment_mark, 'a').close()
 
     def run_end(self):
         text = "Ending Simulations"
-        log.info("{:=<78}".format(text))
+        log.info("{:=^78}".format(text))
         # os.unlink(self.experiment_mark)
 
     def run(self, progress):
@@ -77,18 +77,24 @@ class Experiment(object):
         callbacks = []
         e_plugin = []
 
-        # Order the all
+        # Order everything by the class priority. This sort out dependencies
+        # between the different plugins
         self.order_by_priority()
         self.run_begin()
 
-        # Create any ExperimentPlugins
+        # Create any Experiment Plugins
         for cls, kwargs in self.experiment_plugin:
             c = cls(self.config)
             c.__dict__.update(kwargs)
+
+            # Internal begin
+            c.begin()
+            e_plugin.append(c)
+
+            # Run any user begin_experiment
             if hasattr(c, 'begin_experiment'):
                 log.info("Begin experiment processing for '%s'", c.name)
                 c.begin_experiment()
-            e_plugin.append(c)
             if hasattr(c, 'step'):
                 callbacks.append(c.step)
 
@@ -99,6 +105,9 @@ class Experiment(object):
             if hasattr(c, 'end_experiment'):
                 log.info("End Experiment processing '%s'", c.name)
                 c.end_experiment()
+
+        for c in e_plugin:
+            c.end()
 
         for c in reversed(e_plugin):
             if hasattr(c, 'unload'):
@@ -122,64 +131,6 @@ class Treatment(object):
         self.replicate_count = rcount
         self.extra_args = kwargs
 
-    # @property
-    # def treatment_mark(self):
-        # return os.path.join(self.treatment_output_path, RUNNING)
-
-    def run_begin(self):
-        self.treatment_output_path = os.path.join(
-            self.experiment.output_path, self.name)
-        self.experiment.make_path(self.treatment_output_path)
-        # open(self.treatment_mark, 'a').close()
-
-    def run_end(self):
-        pass
-        # os.unlink(self.treatment_mark)
-
-    def run(self, e_plugin, e_callbacks, progress=None):
-        # Set up and run the treatment_plugin
-        t_plugin = []
-        callbacks = e_callbacks[:]
-
-        self.run_begin()
-
-        for cls, kwargs in self.experiment.treatment_plugin:
-            c = cls(self.experiment.config, self)
-            c.__dict__.update(kwargs)
-
-            t_plugin.append(c)
-            if hasattr(c, 'step'):
-                callbacks.append(c.step)
-
-        for c in chain(e_plugin, t_plugin):
-            if hasattr(c, 'begin_treatment'):
-                log.debug(
-                    "Begin Treatment processing for plugin '%s'" % c.name)
-                c.begin_treatment()
-
-        # Run all the replicates
-        for i in range(self.replicate_count):
-            self.replicate = i
-            # Just analyse?
-            if not self.experiment.config.analysis_only:
-                self.run_replicate(
-                    i, e_plugin, t_plugin, callbacks[:], progress)
-            self.analyse_replicate()
-
-        # Treatment processing
-        for c in chain(t_plugin, e_plugin):
-            if hasattr(c, 'end_treatment'):
-                c.end_treatment()
-                log.debug("End Treatment processing for plugin '%s'" % c.name)
-
-        # Let them unload themselves if needed
-        for c in reversed(t_plugin):
-            if hasattr(c, 'unload'):
-                log.debug("unloading plugin '%s'..." % c.name)
-                c.unload()
-
-        self.run_end()
-
     @property
     def running_mark(self):
         return os.path.join(self.replicate_output_path, RUNNING)
@@ -192,40 +143,68 @@ class Treatment(object):
     def replicate_output_path(self):
         return os.path.join(self.treatment_output_path, "{:0>3}".format(self.replicate))
 
-    def replicate_run_begin(self):
-        self.experiment.make_path(self.replicate_output_path)
+    def run(self, e_plugin, e_callbacks, progress=None):
+        self.treatment_text = "Experiment:'{0}' Treatment:'{1}'".format(self.experiment.name, self.name)
+        log.info("{:=^78}".format(""))
+        log.info("{: ^78}".format(self.treatment_text))
 
-        if os.path.exists(self.complete_mark):
-            return False
+        t_plugin = []
+        callbacks = e_callbacks[:]
 
-        open(self.running_mark, 'a').close()
-        return True
+        self.treatment_output_path = os.path.join(self.experiment.output_path, self.name)
 
-    def replicate_run_end(self):
-        os.unlink(self.running_mark)
-        open(self.complete_mark, 'a').close()
+        # We've not run this experiment before
+        # self.experiment.make_path(self.treatment_output_path)
 
-    def run_replicate(self, r_i, e_plugin, t_plugin, callbacks, progress):
+        # Run everything
+        for cls, kwargs in self.experiment.treatment_plugin:
+            c = cls(self.experiment.config, self)
+            c.__dict__.update(kwargs)
+            t_plugin.append(c)
+            if hasattr(c, 'step'):
+                callbacks.append(c.step)
+
+        # Run begin and end to setup plugin for running
+        for c in t_plugin:
+            c.begin()
+
+        self.run_treatment(e_plugin, t_plugin, callbacks, progress)
+
+        for c in t_plugin:
+            c.end()
+
+        # Let them unload themselves if needed
+        for c in reversed(t_plugin):
+            if hasattr(c, 'unload'):
+                log.debug("plugin:'%s' unload" % c.name)
+                c.unload()
+
+    def run_treatment(self, e_plugin, t_plugin, callbacks, progress):
+        for c in chain(e_plugin, t_plugin):
+            if hasattr(c, 'begin_treatment'):
+                log.debug("plugin:'%s' begin_treatment" % c.name)
+                c.begin_treatment()
+
+        for i in range(self.replicate_count):
+            self.replicate = i
+            self.run_replicate(e_plugin, t_plugin, callbacks[:], progress)
+
+        for c in chain(t_plugin, e_plugin):
+            if hasattr(c, 'end_treatment'):
+                c.end_treatment()
+                log.debug("plugin:'%s' end_treatment" % c.name)
+
+    def run_replicate(self, e_plugin, t_plugin, callbacks, progress):
         seed = self.experiment.rand.randint(0, 1 << 32)
-        text = "Treatment '%s', replicate %d of %d with seed %s" % (
-            self.name, r_i, self.replicate_count, seed)
+        text = "{0} Rep:{1:0>3}/{2:0>3} Seed:{3:}".format(
+            self.treatment_text,
+            self.replicate + 1,
+            self.replicate_count,
+            seed)
+        log.info("{:-^78}".format(""))
+        log.info("{: ^78}".format(text))
 
-        if not self.replicate_run_begin():
-            log.info("{:-<78}".format("Skipping Completed %s" % text))
-            return
-
-        log.info("{:-<78}".format("Beginning %s" % text))
-
-
-        sim = self.sim_class(seed=seed, treatment=self.name,
-                replicate=self.replicate, **self.extra_args)
-
-        sim._begin()
-
-        # Create a history class if we have one
-        if self.experiment.config.history_class is not None:
-            sim.history = self.experiment.config.history_class(self.replicate_output_path, sim)
-
+        # Create the replicate plugins
         r_plugin = []
         for cls, kwargs in self.experiment.replicate_plugin:
             c = cls(self.experiment.config, self)
@@ -234,17 +213,62 @@ class Treatment(object):
             if hasattr(c, 'step'):
                 callbacks.append(c.step)
 
+        for c in r_plugin:
+            c.begin()
+
+        # Is it done?
+        if not os.path.exists(self.complete_mark):
+            # Are we just doing an analysis?
+            if not self.experiment.config.args.analysis:
+                self.run_simulation(e_plugin, t_plugin, r_plugin, callbacks, progress, seed)
+            else:
+                log.info("Not running Simulation (analysis only).")
+        else:
+            log.info("Simulation has already successfully run.")
+
+        self.analyse_simulation(e_plugin, t_plugin, r_plugin)
+
+        for c in r_plugin:
+            c.end()
+
+        # If required, unload the plugins in reverse loading order
+        for c in reversed(r_plugin):
+            if hasattr(c, 'unload'):
+                log.debug("plugin:'%s' unloading..." % c.name)
+                c.unload()
+
+    def run_simulation(self, e_plugin, t_plugin, r_plugin, callbacks, progress, seed):
+        log.info("{:.^78}".format("Running Simulation"))
+        self.experiment.make_path(self.replicate_output_path)
+        open(self.running_mark, 'a').close()
+
+        # Finally, we actually create a simulation
+        sim = self.sim_class(
+            seed=seed,
+            treatment=self.name,
+            replicate=self.replicate,
+            **self.extra_args
+        )
+
+        sim._begin()
+
+        # Create a history class if we have one.
+        if self.experiment.config.history_class is not None:
+            cls = self.experiment.config.history_class
+            sim.history = cls(self.replicate_output_path, sim)
+
         for c in chain(e_plugin, t_plugin, r_plugin):
+            c.replicate = self.replicate
             if hasattr(c, 'begin_replicate'):
-                log.debug(
-                    "begin_replicate processing for plugin '%s'..." % c.name)
+                log.debug("plugin:'%s' begin_replicate..." % c.name)
                 c.begin_replicate(sim)
 
+        # Actually run the simulation. Here is where the action is.
         sim.run(callbacks, progress)
 
         for c in chain(r_plugin, t_plugin, e_plugin):
             if hasattr(c, 'end_replicate'):
-                log.debug("end_replicate Replicate processing for plugin '%s'..." % c.name)
+                log.debug("plugin:'%s' end_replicate..." % c.name)
                 c.end_replicate(sim)
 
         sim._end()
@@ -253,38 +277,30 @@ class Treatment(object):
         if sim.history is not None:
             sim.history.close()
 
-        del sim
+        # If the history is safely closed, we can now say we're done
+        os.unlink(self.running_mark)
+        open(self.complete_mark, 'a').close()
 
-        for c in reversed(r_plugin):
-            if hasattr(c, 'unload'):
-                log.debug("unloading plugin '%s'..." % c.name)
-                c.unload()
-
-        self.replicate_run_end()
-
-
-    def analyse_replicate(self):
+    def analyse_simulation(self, e_plugin, t_plugin, r_plugin):
+        # Put this warning at the beginning
+        log.info("{:.^78}".format(""))
         if self.experiment.config.history_class is None:
-            log.warning("No analysis possible as there no history class")
+            log.warning("{: ^78}".format("No analysis possible as there no history class"))
             return
-
-        text = "Treatment '%s', replicate %d of %d" % (
-            self.name, self.replicate, self.replicate_count)
 
         if not os.path.exists(self.complete_mark):
-            log.warning("{:.<78}".format("Cannot Analyse Unfinished %s" % text))
+            log.info("{: ^78}".format("Can't Analyse Incomplete Simulation"))
+            # Can't analyse what ain't there
+            for c in chain(e_plugin, t_plugin, r_plugin):
+                c.failed_analysis = True
             return
 
-        log.info("{:.<78}".format("Analysing %s" % text))
+        log.info("{: ^78}".format("Analysing Simulation"))
 
-        r_analyses = []
-        for cls, kwargs in self.experiment.replicate_plugin:
-            if hasattr(cls, 'analyse'):
-                c = cls(self.experiment.config, self)
-                c.__dict__.update(kwargs)
-                r_analyses.append(c)
-
+        # Load the history
         hist = self.experiment.config.history_class(self.replicate_output_path)
-        for a in r_analyses:
-            a.do_analyse(hist)
+        for c in chain(e_plugin, t_plugin, r_plugin):
+            if hasattr(c, 'analyse'):
+                c.replicate = self.replicate
+                c.do_analyse(hist)
 

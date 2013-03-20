@@ -104,7 +104,10 @@ class Configuration(object):
                 # We already have an experiment. Users must be explicit about
                 # what to do.
                 if self.args.restart:
-                    resp = self.confirm("Are you sure you want remove everything in '%s'" % pth)
+                    if not self.args.dont_ask:
+                        resp = self.confirm("Are you sure you want remove everything in '%s'" % pth)
+                    else:
+                        resp = True
                     if resp:
                         log.info("Removing existing experiment in '%s' and "
                                 "restarting", pth)
@@ -128,6 +131,7 @@ class Configuration(object):
                 log.error("Cannot create folder '%s'", pth)
                 raise RuntimeError
 
+        # We might have deleted the folder
         if not os.path.exists(pth):
             os.mkdir(pth)
             log.info("Created folder '%s'", pth)
