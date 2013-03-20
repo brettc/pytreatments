@@ -41,13 +41,11 @@ class Plugin(object):
         return self.__class__.__name__
 
     def begin(self):
-        pass
+        if self.config.args.reanalyse:
+            if os.path.exists(self.analysed_mark):
+                os.unlink(self.analysed_mark)
 
     def do_analyse(self, history):
-        if not os.path.exists(self.treatment.complete_mark):
-            # Can't analyse what ain't there
-            self.failed_analysis = True
-
         if os.path.exists(self.analysed_mark):
             if not self.config.args.reanalyse:
                 log.info("Analysis already complete in '%s'", self.output_path)
