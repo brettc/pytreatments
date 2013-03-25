@@ -22,6 +22,7 @@ class Experiment(object):
         self.name = None
 
         self.treatments = []
+        self.current_treatment = None
 
         self.replicate_plugin = []
         self.treatment_plugin = []
@@ -99,7 +100,10 @@ class Experiment(object):
                 callbacks.append(c.step)
 
         for t in self.treatments:
+            self.current_treatment = t
             t.run(e_plugin, callbacks, progress)
+
+        self.current_treatment = None
 
         for c in e_plugin:
             if hasattr(c, 'end_experiment'):
