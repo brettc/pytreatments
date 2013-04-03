@@ -4,6 +4,7 @@ log = logging.getLogger("plugin")
 import os
 
 ANALYSED = 'ANALYSED'
+ANALYSING = 'ANALYSING'
 
 
 class Plugin(object):
@@ -33,7 +34,13 @@ class Plugin(object):
             os.makedirs(self.output_path)
 
     @property
+    def analysing_mark(self):
+        self.make_output_folder()
+        return os.path.join(self.output_path, ANALYSING)
+
+    @property
     def analysed_mark(self):
+        self.make_output_folder()
         return os.path.join(self.output_path, ANALYSED)
 
     @property
@@ -41,6 +48,10 @@ class Plugin(object):
         return self.__class__.__name__
 
     def begin(self):
+        # if os.path.exists(self.analysing_mark):
+            # log.error("An analysis is already running at %s", self.output_path)
+            # raise RuntimeError
+
         if self.config.args.reanalyse:
             if os.path.exists(self.analysed_mark):
                 os.unlink(self.analysed_mark)
@@ -51,9 +62,11 @@ class Plugin(object):
                 log.info("Analysis already complete in '%s'", self.output_path)
                 return
 
+        # open(self.analysing_mark, 'a').close()
         self.analyse(history)
 
     def end(self):
+        # os.unlink(self.analysing_mark)
         if not self.failed_analysis:
             open(self.analysed_mark, 'a').close()
 

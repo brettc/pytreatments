@@ -42,7 +42,14 @@ class Experiment(object):
 
     def load_plugin(self, plugin_cls, kwargs):
         """Add some plugin to run both during and after the simulation"""
-        # if ExperimentPlugin in plugin_cls.__subclasses__():
+
+        # Filter if we ask for a specific plugin
+        p = self.config.args.plugin
+        if p is not None:
+            if p != plugin_cls.__name__:
+                log.info("Ignoring plugin: '{0.__name__}'".format(plugin_cls))
+                return
+
         log.info("Loading plugin: priority {0.priority}, name '{0.__name__}'".format(
                  plugin_cls))
         if issubclass(plugin_cls, TreatmentPlugin):

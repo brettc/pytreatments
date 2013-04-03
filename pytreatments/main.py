@@ -37,6 +37,9 @@ def get_parser():
     parser.add_argument(
         "--replicate", type=int, dest="replicate",
         help="Just do a specific replicate")
+    parser.add_argument(
+        "--plugin", type=str, dest="plugin",
+        help="Just run a particular plugin")
 
     # Mutually exclusive options about what to do with existing stuff
     group = parser.add_mutually_exclusive_group()
