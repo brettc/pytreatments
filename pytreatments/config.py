@@ -19,14 +19,15 @@ class Configuration(object):
         self.analysis_only = False
         self.experiment = Experiment(self)
 
-    def set_name_from_script(self, pth):
+    def set_script(self, pth):
+        self.script_path = pth
         base_path, name = os.path.split(pth)
         name, ext = os.path.splitext(name)
         self.base_path = base_path
         self.experiment.name = name
 
     def set_base_path(self, pth):
-        # Script can override this
+        # This is set above, but the script can override it
         self.base_path = pth
 
     def init(self):
@@ -48,6 +49,7 @@ class Configuration(object):
         if self.script_path:
             # We're going to stick a copy of the script into the output folder.
             # This is good for referring to later
+            log.info("Saving copy of script here '%s'", self.output_path)
             shutil.copy(self.script_path, self.output_path)
 
     ## {{{ http://code.activestate.com/recipes/541096/ (r1)

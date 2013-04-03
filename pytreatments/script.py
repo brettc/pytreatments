@@ -24,7 +24,7 @@ class Script(object):
             raise RuntimeError
 
         # We need to set some stuff in the Experiment first
-        self.context.config.set_name_from_script(pth)
+        self.context.config.set_script(pth)
 
         # ... then execute this (which can change the config)
         self.execute(pth)
