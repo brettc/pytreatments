@@ -31,6 +31,13 @@ def get_parser():
         "--dont-ask", action="store_true", dest="dont_ask",
         help="Don't ask for verification on deletion, just do it")
 
+    parser.add_argument(
+        "--treatment", type=str, dest="treatment",
+        help="Just do a specific treatment")
+    parser.add_argument(
+        "--replicate", type=int, dest="replicate",
+        help="Just do a specific replicate")
+
     # Mutually exclusive options about what to do with existing stuff
     group = parser.add_mutually_exclusive_group()
     group.add_argument(

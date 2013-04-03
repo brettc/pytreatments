@@ -100,6 +100,11 @@ class Experiment(object):
                 callbacks.append(c.step)
 
         for t in self.treatments:
+            # Skip to desired treatment
+            if self.config.args.treatment is not None:
+                if t.name != self.config.args.treatment:
+                    continue
+
             self.current_treatment = t
             t.run(e_plugin, callbacks, progress)
 
@@ -134,6 +139,8 @@ class Treatment(object):
         self.replicate = None
         self.replicate_count = rcount
         self.extra_args = kwargs
+        self.seeds = [self.experiment.rand.randint(0, 1 << 32)
+                      for i in range(self.replicate_count)]
 
     @property
     def running_mark(self):
@@ -190,6 +197,9 @@ class Treatment(object):
                 c.begin_treatment()
 
         for i in range(self.replicate_count):
+            if self.experiment.config.args.replicate is not None:
+                if self.experiment.config.args.replicate != i:
+                    continue
             self.replicate = i
             self.run_replicate(e_plugin, t_plugin, callbacks[:], progress)
 
@@ -199,7 +209,7 @@ class Treatment(object):
                 log.debug("plugin:'%s' end_treatment" % c.name)
 
     def run_replicate(self, e_plugin, t_plugin, callbacks, progress):
-        seed = self.experiment.rand.randint(0, 1 << 32)
+        seed = self.seeds[self.replicate]
         text = "{0} Rep:{1:0>3}/{2:0>3} Seed:{3:}".format(
             self.treatment_text,
             self.replicate + 1,
