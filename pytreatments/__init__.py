@@ -4,3 +4,4 @@ from context import Context
 from plugin import Plugin
 from main import run_main
 from experiment import Interrupt
+from history import History
