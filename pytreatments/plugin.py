@@ -5,6 +5,7 @@ import os
 
 ANALYSED = 'ANALYSED'
 
+
 class Plugin(object):
 
     # Default load priority
@@ -25,12 +26,12 @@ class Plugin(object):
         # Only make output folder when needed
         self.make_output_folder()
         pth = os.path.join(self.output_path, name)
-        log.info("Acquiring file name '%s'", pth)
+        log.debug("Acquiring file name '%s'", pth)
         return pth
 
     def make_output_folder(self):
         if not os.path.exists(self.output_path):
-            log.info("Making folder '%s'", self.output_path)
+            log.debug("Making folder '%s'", self.output_path)
             os.makedirs(self.output_path)
 
     @property
@@ -54,7 +55,7 @@ class Plugin(object):
 
     @property
     def replicate_output_path(self):
-        basepth = self.treatment.replicate_output_path
+        basepth = self.replicate.output_path
         return os.path.join(basepth, self.name)
 
     def do_begin_experiment(self):
@@ -73,10 +74,10 @@ class Plugin(object):
 
     def do_begin_replicate(self, r):
         self.replicate = r
-        self.output_path = self.replicate_output_path
+        self.output_path = self.replicate.output_path
         if hasattr(self, 'begin_replicate'):
             log.debug("plugin:'%s' begin_replicate..." % self.name)
-            self.begin_replicate(sim)
+            self.begin_replicate()
 
     def do_begin_simulation(self, sim):
         if hasattr(self, 'begin_simulation'):
@@ -91,9 +92,10 @@ class Plugin(object):
             return
         if os.path.exists(self.analysed_mark):
             if not self.config.args.reanalyse:
-                log.info("Analysis already complete in '%s'", self.output_path)
+                log.info("Analysis '%s' already complete", self.name)
                 return
 
+        log.info("Analysis '%s' running...", self.name)
         self.analyse_replicate(history)
         open(self.analysed_mark, 'a').close()
 
@@ -110,14 +112,11 @@ class Plugin(object):
             self.begin_treatment()
         self.treatment = None
 
-
     def do_end_experiment(self):
         self.output_path = self.experiment_output_path
         if hasattr(self, 'end_experiment'):
             log.info("End Experiment processing '%s'", self.name)
             self.end_experiment()
-
-
 
 
 # This allows us to export them to the namespace in the config_loader

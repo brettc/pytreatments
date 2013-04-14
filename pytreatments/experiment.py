@@ -52,13 +52,13 @@ class Experiment(object):
         self.loaded_plugins.sort(key=lambda x: x[0].priority)
 
     def run_begin(self):
-        text = "Experiment:'{}'".format(self.name)
+        text = "Begin Experiment:'{}'".format(self.name)
         log.info("{:=^78}".format(text))
         self.output_path = self.config.output_path
         # open(self.experiment_mark, 'a').close()
 
     def run_end(self):
-        text = "Ending Simulations"
+        text = "End Experiment:'{}'".format(self.name)
         log.info("{:=^78}".format(text))
         # os.unlink(self.experiment_mark)
 
@@ -70,7 +70,6 @@ class Experiment(object):
         # Order everything by the class priority. This sort out dependencies
         # between the different plugins
         self.order_by_priority()
-        self.run_begin()
 
         # Create All Plugins
         for cls, kwargs in self.loaded_plugins:
@@ -78,6 +77,10 @@ class Experiment(object):
             plugins.append(c)
             if hasattr(c, 'step'):
                 callbacks.append(c.step)
+
+        self.run_begin()
+
+        for c in plugins:
             c.do_begin_experiment()
 
         for t in self.treatments:
@@ -105,66 +108,72 @@ class Experiment(object):
 class Treatment(object):
     def __init__(self, experiment, name, rcount, **kwargs):
         self.experiment = experiment
-        self.sim_class = experiment.config.sim_class
         self.name = name
-        self.replicate = None
+        self.sim_class = experiment.config.sim_class
         self.replicate_count = rcount
         self.extra_args = kwargs
-        self.seeds = [self.experiment.rand.randint(0, 1 << 32)
-                      for i in range(self.replicate_count)]
-
-    @property
-    def running_mark(self):
-        return os.path.join(self.replicate_output_path, RUNNING)
-
-    @property
-    def complete_mark(self):
-        return os.path.join(self.replicate_output_path, COMPLETE)
-
-    @property
-    def seed_mark(self):
-        return os.path.join(self.replicate_output_path, SEED)
-
-    @property
-    def replicate_output_path(self):
-        return os.path.join(self.output_path, "{:0>3}".format(self.current_replicate))
+        rfun = self.experiment.rand.randint
+        self.replicates = [Replicate(experiment, self, i, rfun(0, 1 << 32))
+                           for i in range(self.replicate_count)]
 
     def run(self, plugins, callbacks, progress=None):
         self.output_path = os.path.join(self.experiment.output_path, self.name)
-        self.treatment_text = "Experiment:'{0}' Treatment:'{1}'".format(self.experiment.name, self.name)
+        self.text = "Experiment:'{0}' Treatment:'{1}'".format(
+            self.experiment.name, self.name)
         log.info("{:=^78}".format(""))
-        log.info("{: ^78}".format(self.treatment_text))
+        log.info("{: ^78}".format(self.text))
 
         # Run begin and end to setup plugin for running
         for c in plugins:
             c.do_begin_treatment(self)
 
-        self.run_treatment(plugins, callbacks, progress)
+        for r in self.replicates:
+            r.run(plugins, callbacks, progress)
 
         for c in plugins:
             c.do_end_treatment()
 
-    def run_treatment(self, plugins, callbacks, progress):
-        for i in range(self.replicate_count):
-            # We can run a single replicate if required
-            if self.experiment.config.args.replicate is not None:
-                if self.experiment.config.args.replicate != i:
-                    continue
-            self.current_replicate = i
-            self.run_replicate(plugins, callbacks, progress)
 
-    def run_replicate(self, plugins, callbacks, progress):
-        seed = self.seeds[self.current_replicate]
+class Replicate(object):
+    def __init__(self, experiment, treatment, r, seed):
+        self.experiment = experiment
+        self.treatment = treatment
+        self.sequence = r
+        self.seed = seed
+
+    @property
+    def running_mark(self):
+        return os.path.join(self.output_path, RUNNING)
+
+    @property
+    def complete_mark(self):
+        return os.path.join(self.output_path, COMPLETE)
+
+    @property
+    def seed_mark(self):
+        return os.path.join(self.output_path, SEED)
+
+    @property
+    def output_path(self):
+        return os.path.join(self.treatment.output_path,
+                            "{:0>3}".format(self.sequence))
+
+    def run(self, plugins, callbacks, progress):
+        # We can run a single replicate if required
+        if self.experiment.config.args.replicate is not None:
+            if self.experiment.config.args.replicate != self.sequence:
+                    return
+
         text = "{0} Rep:{1:0>3}/{2:0>3} Seed:{3:}".format(
-            self.treatment_text,
-            self.current_replicate + 1,
-            self.replicate_count,
-            seed)
+            self.treatment.text,
+            self.sequence + 1,
+            self.treatment.replicate_count,
+            self.seed)
         log.info("{:-^78}".format(""))
         log.info("{: ^78}".format(text))
 
         for c in plugins:
-            c.do_begin_replicate(self.current_replicate)
+            c.do_begin_replicate(self)
 
         # Run the simulation if required
         if not os.path.exists(self.complete_mark):
@@ -182,9 +191,9 @@ class Treatment(object):
         for c in plugins:
             c.do_end_replicate()
 
-    def run_simulation(self, plugins, callbacks, progress, seed):
+    def run_simulation(self, plugins, callbacks, progress):
         log.info("{:.^78}".format("Running Simulation"))
-        self.experiment.make_path(self.replicate_output_path)
+        self.experiment.make_path(self.output_path)
         open(self.running_mark, 'a').close()
         s = open(self.seed_mark, 'a')
         s.write("%s" % seed)
@@ -192,9 +201,9 @@ class Treatment(object):
 
         # Finally, we actually create a simulation
         sim = self.sim_class(
-            seed=seed,
-            treatment=self.name,
-            replicate=self.current_replicate,
+            seed=self.seed,
+            treatment=self.treatment.name,
+            replicate=self.sequence,
             **self.extra_args
         )
 
@@ -203,7 +212,7 @@ class Treatment(object):
         # Create a history class if we have one.
         if self.experiment.config.history_class is not None:
             cls = self.experiment.config.history_class
-            sim.history = cls(self.replicate_output_path, sim)
+            sim.history = cls(self.output_path, sim)
 
         for c in plugins:
             c.do_begin_simulation(sim)
@@ -238,6 +247,8 @@ class Treatment(object):
         log.info("{: ^78}".format("Analysing Simulation"))
 
         # Load the history
-        hist = self.experiment.config.history_class(self.replicate_output_path)
+        hist = self.experiment.config.history_class(self.output_path,
+                                                    replicate_seed=self.seed)
         for c in plugins:
             c.do_analyse_replicate(hist)
+        hist.close()
