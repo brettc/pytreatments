@@ -6,6 +6,9 @@ import os
 ANALYSED = 'ANALYSED'
 ANALYSING = 'ANALYSING'
 
+# class TreatmentResults(object):
+    # def __init__(self):
+        # self.done = False
 
 class Plugin(object):
 
@@ -16,6 +19,7 @@ class Plugin(object):
         self.config = config
         self.failed_analysis = False
         self.output_path = None
+        log.debug("Creating Plugin %s", self.name)
 
     def get_file(self, name):
         pth = self.get_file_name(name)
@@ -47,54 +51,80 @@ class Plugin(object):
     def name(self):
         return self.__class__.__name__
 
-    def begin(self):
-        # if os.path.exists(self.analysing_mark):
-            # log.error("An analysis is already running at %s", self.output_path)
-            # raise RuntimeError
+    @property
+    def experiment_output_path(self):
+        basepth = self.config.experiment.output_path
+        return os.path.join(basepth, self.name)
 
-        if self.config.args.reanalyse:
-            if os.path.exists(self.analysed_mark):
-                os.unlink(self.analysed_mark)
+    def do_begin_experiment(self):
+        # Run any user begin_experiment
+        self.output_path = self.experiment_output_path
+        # if os.path.exists(self.analysed_mark):
+        # if self.config.args.reanalyse:
+                # os.unlink(self.analysed_mark)
+        if hasattr(self, 'begin_experiment'):
+            log.info("Begin experiment processing for '%s'", self.name)
+            self.begin_experiment()
 
-    def do_analyse(self, history):
+    def do_end_experiment(self):
+        self.output_path = self.experiment_output_path
+        if hasattr(self, 'end_experiment'):
+            log.info("End Experiment processing '%s'", self.name)
+            self.end_experiment()
+        # open(self.analysed_mark, 'a').close()
+
+    @property
+    def treatment_output_path(self):
+        basepth = self.treatment.output_path
+        return os.path.join(basepth, self.name)
+
+    def do_begin_treatment(self, t):
+        self.treatment = t
+        self.output_path = self.treatment_output_path
+        if hasattr(self, 'begin_treatment'):
+            log.debug("plugin:'%s' begin_treatment" % self.name)
+            self.begin_treatment()
+
+    def do_end_treatment(self):
+        self.output_path = self.treatment_output_path
+        if hasattr(self, 'begin_treatment'):
+            log.debug("plugin:'%s' begin_treatment" % self.name)
+            self.begin_treatment()
+
+    @property
+    def replicate_output_path(self):
+        basepth = self.treatment.replicate_output_path
+        return os.path.join(basepth, self.name)
+
+    def do_begin_replicate(self, r):
+        self.replicate = r
+        self.output_path = self.replicate_output_path
+        if hasattr(self, 'begin_replicate'):
+            log.debug("plugin:'%s' begin_replicate..." % self.name)
+            self.begin_replicate(sim)
+
+    def do_end_replicate(self):
+        if hasattr(self, 'end_replicate'):
+            log.debug("plugin:'%s' end_replicate..." % self.name)
+            self.end_replicate(sim)
+
+    def do_begin_simulation(self, sim):
+        if hasattr(self, 'begin_simulation'):
+            self.begin_simulation(sim)
+
+    def do_end_simulation(self, sim):
+        if hasattr(self, 'end_simulation'):
+            self.end_simulation(sim)
+
+    def do_analyse_replicate(self, history):
         if os.path.exists(self.analysed_mark):
             if not self.config.args.reanalyse:
                 log.info("Analysis already complete in '%s'", self.output_path)
                 return
+        if hasattr(self, 'analyse_replicate'):
+            self.analyse_replicate(history)
 
         # open(self.analysing_mark, 'a').close()
-        self.analyse(history)
-
-    def end(self):
-        # os.unlink(self.analysing_mark)
-        if not self.failed_analysis:
-            open(self.analysed_mark, 'a').close()
-
-
-class ExperimentPlugin(Plugin):
-    def __init__(self, config):
-        log.debug("Creating Plugin %s", self.__class__.__name__)
-        Plugin.__init__(self, config)
-        basepth = self.config.experiment.output_path
-        self.output_path = os.path.join(basepth, self.__class__.__name__)
-
-class TreatmentPlugin(Plugin):
-    def __init__(self, config, treatment):
-        log.debug("Creating Plugin %s", self.__class__.__name__)
-        Plugin.__init__(self, config)
-        self.treatment = treatment
-        basepth = treatment.treatment_output_path
-        self.output_path = os.path.join(basepth, self.__class__.__name__)
-
-
-class ReplicatePlugin(Plugin):
-    def __init__(self, config, treatment):
-        log.debug("Creating Plugin %s", self.__class__.__name__)
-        Plugin.__init__(self, config)
-        self.treatment = treatment
-        self.replicate = treatment.replicate
-        basepth = treatment.replicate_output_path
-        self.output_path = os.path.join(basepth, self.__class__.__name__)
 
 
 # This allows us to export them to the namespace in the config_loader
