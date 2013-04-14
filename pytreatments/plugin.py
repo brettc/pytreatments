@@ -74,7 +74,7 @@ class Plugin(object):
 
     def do_begin_replicate(self, r):
         self.replicate = r
-        self.output_path = self.replicate.output_path
+        self.output_path = self.replicate_output_path
         if hasattr(self, 'begin_replicate'):
             log.debug("plugin:'%s' begin_replicate..." % self.name)
             self.begin_replicate()

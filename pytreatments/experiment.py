@@ -109,7 +109,6 @@ class Treatment(object):
     def __init__(self, experiment, name, rcount, **kwargs):
         self.experiment = experiment
         self.name = name
-        self.sim_class = experiment.config.sim_class
         self.replicate_count = rcount
         self.extra_args = kwargs
         rfun = self.experiment.rand.randint
@@ -164,8 +163,9 @@ class Replicate(object):
             if self.experiment.config.args.replicate != self.sequence:
                     return
 
-        text = "{0} Rep:{1:0>3}/{2:0>3} Seed:{3:}".format(
+        text = "{0} Rep:{1:0>3} ({2:}/{3:}), using Seed:{4:}".format(
             self.treatment.text,
+            self.sequence,
             self.sequence + 1,
             self.treatment.replicate_count,
             self.seed)
@@ -179,11 +179,13 @@ class Replicate(object):
         if not os.path.exists(self.complete_mark):
             # Are we just doing an analysis?
             if not self.experiment.config.args.analysis:
-                self.run_simulation(plugins, callbacks, progress, seed)
+                self.run_simulation(plugins, callbacks, progress)
             else:
-                log.info("Not running Simulation (analysis only).")
+                log.info("Not running Simulation %03d (analysis only).",
+                         self.sequence)
         else:
-            log.info("Simulation has already successfully run.")
+            log.info("Simulation %03d already successfully run.",
+                     self.sequence)
 
         # Now analyse the simulation
         self.analyse_simulation(plugins)
@@ -196,15 +198,15 @@ class Replicate(object):
         self.experiment.make_path(self.output_path)
         open(self.running_mark, 'a').close()
         s = open(self.seed_mark, 'a')
-        s.write("%s" % seed)
+        s.write("%s" % self.seed)
         s.close()
 
         # Finally, we actually create a simulation
-        sim = self.sim_class(
+        sim = self.experiment.config.sim_class(
             seed=self.seed,
             treatment=self.treatment.name,
             replicate=self.sequence,
-            **self.extra_args
+            **self.treatment.extra_args
         )
 
         sim._begin()
@@ -237,7 +239,8 @@ class Replicate(object):
         # Put this warning at the beginning
         log.info("{:.^78}".format(""))
         if self.experiment.config.history_class is None:
-            log.warning("{: ^78}".format("No analysis possible as there no history class"))
+            log.warning("{: ^78}".format(
+                "No analysis possible as there no history class"))
             return
 
         if not os.path.exists(self.complete_mark):
