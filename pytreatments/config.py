@@ -49,7 +49,8 @@ class Configuration(object):
         if self.script_path:
             # We're going to stick a copy of the script into the output folder.
             # This is good for referring to later
-            log.info("Saving copy of script here '%s'", self.output_path)
+            log.info("Saving copy of script '%s' to '%s'",
+                     self.script_path, self.output_path)
             shutil.copy(self.script_path, self.output_path)
 
     ## {{{ http://code.activestate.com/recipes/541096/ (r1)
