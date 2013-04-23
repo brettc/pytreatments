@@ -141,6 +141,10 @@ class Replicate(object):
         self.seed = seed
 
     @property
+    def is_complete(self):
+        return os.path.exists(self.complete_mark)
+
+    @property
     def running_mark(self):
         return os.path.join(self.output_path, RUNNING)
 
@@ -176,7 +180,7 @@ class Replicate(object):
             c.do_begin_replicate(self)
 
         # Run the simulation if required
-        if not os.path.exists(self.complete_mark):
+        if not self.is_complete:
             # Are we just doing an analysis?
             if not self.experiment.config.args.analysis:
                 self.run_simulation(plugins, callbacks, progress)

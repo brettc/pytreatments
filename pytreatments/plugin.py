@@ -5,6 +5,8 @@ import os
 
 ANALYSED = 'ANALYSED'
 
+CTX_NONE, CTX_EXPERIMENT, CTX_TREATMENT, CTX_REPLICATE = range(4)
+
 
 class Plugin(object):
 
@@ -16,6 +18,7 @@ class Plugin(object):
         self.treatment = None
         self.replicate = None
         self.output_path = None
+        self.context = CTX_NONE
         log.debug("Creating Plugin %s", self.name)
 
     def get_file(self, name, attr='wb'):
@@ -60,12 +63,14 @@ class Plugin(object):
 
     def do_begin_experiment(self):
         # Run any user begin_experiment
+        self.context = CTX_EXPERIMENT
         self.output_path = self.experiment_output_path
         if hasattr(self, 'begin_experiment'):
             log.info("Begin experiment processing for '%s'", self.name)
             self.begin_experiment()
 
     def do_begin_treatment(self, t):
+        self.context = CTX_TREATMENT
         self.treatment = t
         self.output_path = self.treatment_output_path
         if hasattr(self, 'begin_treatment'):
@@ -73,6 +78,7 @@ class Plugin(object):
             self.begin_treatment()
 
     def do_begin_replicate(self, r):
+        self.context = CTX_REPLICATE
         self.replicate = r
         self.output_path = self.replicate_output_path
         if hasattr(self, 'begin_replicate'):
@@ -94,18 +100,22 @@ class Plugin(object):
             if not self.config.args.reanalyse:
                 log.info("Analysis '%s' already complete", self.name)
                 return
+            else:
+                os.unlink(self.analysed_mark)
 
         log.info("Analysis '%s' running...", self.name)
         self.analyse_replicate(history)
         open(self.analysed_mark, 'a').close()
 
     def do_end_replicate(self):
+        self.context = CTX_REPLICATE
         if hasattr(self, 'end_replicate'):
             log.debug("plugin:'%s' end_replicate..." % self.name)
             self.end_replicate()
         self.replicate = None
 
     def do_end_treatment(self):
+        self.context = CTX_TREATMENT
         self.output_path = self.treatment_output_path
         if hasattr(self, 'begin_treatment'):
             log.debug("plugin:'%s' begin_treatment" % self.name)
@@ -113,10 +123,53 @@ class Plugin(object):
         self.treatment = None
 
     def do_end_experiment(self):
+        self.context = CTX_EXPERIMENT
         self.output_path = self.experiment_output_path
         if hasattr(self, 'end_experiment'):
             log.info("End Experiment processing '%s'", self.name)
             self.end_experiment()
+
+    def collate_csv(self, nm):
+        """Collate all separate CSV files into one
+
+        Works at experiment or treatment level
+        """
+        # TODO We're always re-analysing here. Maybe shouldn't?
+        if os.path.exists(self.analysed_mark):
+            log.debug("Removing %s", self.analysed_mark)
+            os.unlink(self.analysed_mark)
+
+        assert self.context in (CTX_EXPERIMENT, CTX_TREATMENT)
+        collated = self.get_file(nm)
+
+        # Dodgy get around of inner scoping
+        firsttime = [True]
+        success = [True]
+
+        def collate_treatment(t):
+            for r in t.replicates:
+                if r.is_complete:
+                    pth = os.path.join(r.output_path, self.name, nm)
+                    f = open(pth)
+                    if firsttime:
+                        # Make false
+                        firsttime.pop()
+                    else:
+                        # Discard headers
+                        f.readline()
+                    collated.write(f.read())
+                else:
+                    log.debug("Can't collate everything as %s is missing", r)
+                    success.pop()
+
+        if self.context == CTX_TREATMENT:
+            collate_treatment(self.treatment)
+        else:
+            for t in self.config.experiment.treatments:
+                collate_treatment(t)
+
+        if success:
+            open(self.analysed_mark, 'a').close()
 
 
 # This allows us to export them to the namespace in the config_loader
