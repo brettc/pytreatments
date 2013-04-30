@@ -32,7 +32,11 @@ class Experiment(object):
         log.info(
             "Adding treatment '%s' to Experiment '%s', with %d replicates",
             name, self.name, replicates)
-        self.treatments.append(Treatment(self, name, replicates, **kwargs))
+
+        # We give each treatment its own derivative seed to maintain
+        # consistency within a treatment if we change the replicate number
+        tseed = self.rand.randint(0, 1 << 32)
+        self.treatments.append(Treatment(self, name, replicates, tseed, **kwargs))
 
     def load_plugin(self, plugin_cls, kwargs):
         """Add some plugin to run both during and after the simulation"""
@@ -72,8 +76,8 @@ class Experiment(object):
         self.order_by_priority()
 
         # Create All Plugins
-        for cls, kwargs in self.loaded_plugins:
-            c = cls(self.config, **kwargs)
+        for plugin_cls, kwargs in self.loaded_plugins:
+            c = plugin_cls(self.config, **kwargs)
             plugins.append(c)
             if hasattr(c, 'step'):
                 callbacks.append(c.step)
@@ -106,11 +110,13 @@ class Experiment(object):
 
 
 class Treatment(object):
-    def __init__(self, experiment, name, rcount, **kwargs):
+    def __init__(self, experiment, name, rcount, tseed, **kwargs):
         self.experiment = experiment
         self.name = name
         self.replicate_count = rcount
         self.extra_args = kwargs
+        self.rand = random.Random()
+        self.rand.seed(tseed)
         rfun = self.experiment.rand.randint
         self.replicates = [Replicate(experiment, self, i, rfun(0, 1 << 32))
                            for i in range(self.replicate_count)]
@@ -208,8 +214,8 @@ class Replicate(object):
         # Finally, we actually create a simulation
         sim = self.experiment.config.sim_class(
             seed=self.seed,
-            treatment=self.treatment.name,
-            replicate=self.sequence,
+            treatment_name=self.treatment.name,
+            replicate_seq=self.sequence,
             **self.treatment.extra_args
         )
 
@@ -217,14 +223,16 @@ class Replicate(object):
 
         # Create a history class if we have one.
         if self.experiment.config.history_class is not None:
-            cls = self.experiment.config.history_class
-            sim.history = cls(self.output_path, sim)
+            history_cls = self.experiment.config.history_class
+            history = history_cls(self.output_path, sim)
+        else:
+            history = None
 
         for c in plugins:
             c.do_begin_simulation(sim)
 
         # Actually run the simulation. Here is where the action is.
-        sim.run(callbacks, progress)
+        sim.run(history, callbacks, progress)
 
         for c in plugins:
             c.do_end_simulation(sim)
@@ -232,8 +240,8 @@ class Replicate(object):
         sim._end()
 
         # This might help shut some stuff down, before running the unloading...
-        if sim.history is not None:
-            sim.history.close()
+        if history is not None:
+            history.close()
 
         # If the history is safely closed, we can now say we're done
         os.unlink(self.running_mark)
@@ -242,7 +250,8 @@ class Replicate(object):
     def analyse_simulation(self, plugins):
         # Put this warning at the beginning
         log.info("{:.^78}".format(""))
-        if self.experiment.config.history_class is None:
+        history_cls = self.experiment.config.history_class
+        if history_cls is None:
             log.warning("{: ^78}".format(
                 "No analysis possible as there no history class"))
             return
@@ -254,8 +263,8 @@ class Replicate(object):
         log.info("{: ^78}".format("Analysing Simulation"))
 
         # Load the history
-        hist = self.experiment.config.history_class(self.output_path,
-                                                    replicate_seed=self.seed)
+        history_cls = self.experiment.config.history_class
+        history = history_cls(self.output_path, replicate_seed=self.seed)
         for c in plugins:
-            c.do_analyse_replicate(hist)
-        hist.close()
+            c.do_analyse_replicate(history)
+        history.close()

@@ -24,18 +24,13 @@ class BaseProgress(object):
 
 
 class Simulation(object):
-    def __init__(self, seed=None, treatment=None, replicate=None):
+    def __init__(self, seed, treatment_name, replicate_seq):
         """Construction a simulation.
         """
         self.seed = seed
-        self.treatment = treatment
-        self.replicate = replicate
-        if self.treatment is not None and self.replicate is not None:
-            self.description = "{0.treatment} R{0.replicate:0>3}".format(self)
-        else:
-            self.description = ""
-
-        self.history = None
+        self.treatment_name = treatment_name
+        self.replicate_seq = replicate_seq
+        self.description = "T{0.treatment_name} R{0.replicate_seq:0>3}".format(self)
         self.time_step = 0
 
     def _begin(self):
@@ -50,15 +45,15 @@ class Simulation(object):
     def end(self):
         pass
 
-    def _step(self):
-        self.more = self.step()
+    def _step(self, history):
+        self.more = self.step(history)
 
-    def run(self, callbacks=None, progress=None):
+    def run(self, history=None, callbacks=None, progress=None):
         if progress:
             progress.begin(self)
 
         while 1:
-            self._step()
+            self._step(history)
 
             if callbacks:
                 for c in callbacks:

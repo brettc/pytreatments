@@ -24,7 +24,8 @@ class History(object):
             # under changing code)
             if self.sim.seed != replicate_seed:
                 log.warning(
-                    "The replicate seed %d is different from the simulation seed %d",
+                    "The replicate seed (%d) given by the experiment is different "
+                    "from the saved seed (%d) in the history!",
                     replicate_seed, self.sim.seed)
 
             # Extra verification can be built into here
