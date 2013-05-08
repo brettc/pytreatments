@@ -10,19 +10,18 @@ class History(object):
 
         if sim is not None:
             self.running = True
-            self.sim = sim
-            self.init()
+            self.init(sim)
         else:
             assert replicate_seed is not None
             self.mark_time()
-            self.sim = self.load()
+            sim = self.load()
             log.debug("Loading history from %s took %f seconds",
                       pth, self.report_time())
             self.running = False
 
             # Verify that the seed is the same (ensures stability of analysis
             # under changing code)
-            if self.sim.seed != replicate_seed:
+            if sim.seed != replicate_seed:
                 log.warning(
                     "The replicate seed (%d) given by the experiment is different "
                     "from the saved seed (%d) in the history!",
