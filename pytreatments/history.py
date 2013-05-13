@@ -10,9 +10,11 @@ class History(object):
 
         if sim is not None:
             self.running = True
+            self.mode = 'w'
             self.init(sim)
         else:
             assert replicate_seed is not None
+            self.mode = 'r'
             self.mark_time()
             sim = self.load()
             log.debug("Loading history from %s took %f seconds",
