@@ -8,4 +8,5 @@ add_treatment('treatment1', replicates=6, params=t1)
 add_treatment('treatment2', replicates=5, params=t2)
 
 load_plugin(simple_capture)
+load_plugin(nothing)
 

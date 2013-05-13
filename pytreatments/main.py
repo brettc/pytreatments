@@ -18,14 +18,43 @@ def get_parser():
         "-v", "--verbose",
         action="store_true", dest="verbose",
         help="show verbose (debug) output")
-    parser.add_argument(
-        "--clean",
-        action="store_true", dest="clean",
-        help="Clean any previous output")
+
     parser.add_argument(
         "-o", "--output", type=str,
-        help="Provide a base folder for output (rather than the default)")
+        help="Provide a base folder for output (overrides script definition)")
 
+    parser.add_argument(
+        "-R", "--redo-analyses", action="store_true", dest="reanalyse",
+        help="Redo the analyses (only with the analysis option)")
+
+    parser.add_argument(
+        "--dont-ask", action="store_true", dest="dont_ask",
+        help="Don't ask for verification on deletion, just do it")
+
+    parser.add_argument(
+        "--treatment", type=str, dest="treatment",
+        help="Just do a specific treatment")
+    parser.add_argument(
+        "--replicate", type=int, dest="replicate",
+        help="Just do a specific replicate")
+    parser.add_argument(
+        "--plugin", type=str, dest="plugin",
+        help="Just run a particular plugin")
+
+    # Mutually exclusive options about what to do with existing stuff
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--continue",
+        action="store_true", dest="keepgoing",
+        help="Continue an existing experiment")
+    group.add_argument(
+        "--analysis",
+        action="store_true", dest="analysis",
+        help="Analyse an existing experiment")
+    group.add_argument(
+        "--restart",
+        action="store_true", dest="restart",
+        help="Restart the experiment (losing any previous output)")
     return parser
 
 
@@ -72,8 +101,6 @@ def run_main(sim_class, context_class, history_class=None, progress=None, parser
     try:
         spt.load(script_path)
         cfg.experiment.run(progress)
-        cfg.experiment.analyse()
-        return 0
 
     except KeyboardInterrupt:
         log.error("User interrupted the Program")

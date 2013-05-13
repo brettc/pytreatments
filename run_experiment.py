@@ -3,7 +3,8 @@ log = logging.getLogger("run_experiment")
 
 import sys
 from pytreatments import (
-    run_main, Context, Simulation, ReplicatePlugin, register_plugin
+    run_main, Context, Simulation,
+    register_plugin, TreatmentPlugin, ReplicatePlugin
 )
 
 
@@ -39,6 +40,17 @@ class MySimulation(Simulation):
         log.info("Ending ...")
 
 
+class MyHistory(object):
+    def __init__(self, folder, sim=None):
+        if sim is None:
+            log.info("Loading history object from '%s'" % folder)
+        else:
+            log.info("Creating history object for recording '%s'" % folder)
+
+    def close(self):
+        pass
+
+
 @register_plugin
 class simple_capture(ReplicatePlugin):
 
@@ -48,6 +60,18 @@ class simple_capture(ReplicatePlugin):
     def step(self, sim):
         self.output.write("stepping in sim %s" % sim.time_step)
 
+    def analyse(self, history):
+        log.info("Analysing history ...")
+
+
+@register_plugin
+class nothing(TreatmentPlugin):
+    def begin_treatment(self):
+        self.output = self.get_file('yippeee.txt')
+
+    def begin_replicate(self, sim):
+        self.output.write("Another one\n")
+
 
 if __name__ == "__main__":
-    sys.exit(run_main(MySimulation, MyContext))
+    sys.exit(run_main(MySimulation, MyContext, MyHistory))
