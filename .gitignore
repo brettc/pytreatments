@@ -2,3 +2,4 @@
 *.output
 *.ropeproject
 .DS_Store
+.cache
