@@ -21,7 +21,7 @@ class Context(object):
 
         self.namespace = ns
 
-    def load_namespace(self):
+    def load_namespace(self, ns):
         raise NotImplementedError
 
     def init(self, pth):

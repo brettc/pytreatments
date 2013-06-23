@@ -41,7 +41,7 @@ class History(object):
     def load(self):
         pass
 
-    def init(self):
+    def init(self, sim):
         pass
 
     def close(self):
