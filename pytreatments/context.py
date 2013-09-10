@@ -12,6 +12,7 @@ class Context(object):
         self.load_namespace(ns)
         ns['add_treatment'] = self.add_treatment
         ns['load_plugin'] = self.load_plugin
+        ns['get_replicate'] = self.get_replicate
         ns['seed'] = self.set_seed
         ns['output'] = self.set_output
 
@@ -38,6 +39,9 @@ class Context(object):
     def add_treatment(self, name, replicates=1, **kwargs):
         # Duplicate the parameters so that they can't be changed
         self.config.experiment.add_treatment(name, replicates, **kwargs)
+
+    def get_replicate(self, name, rep_num):
+        return self.config.experiment.get_replicate(name, rep_num)
 
     def load_plugin(self, cls, **kwargs):
         if cls not in plugin.plugin_classes:

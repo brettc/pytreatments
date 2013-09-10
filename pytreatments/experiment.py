@@ -21,6 +21,7 @@ class Experiment(object):
         self.treatments = []
         self.current_treatment = None
         self.loaded_plugins = []
+        self.treatment_names = set()
 
         # We use this to generates seeds for all of the experiments
         self.rand = random.Random()
@@ -29,6 +30,12 @@ class Experiment(object):
         self.rand.seed(seed)
 
     def add_treatment(self, name, replicates, **kwargs):
+        if name in self.treatment_names:
+            log.error("Treatment with name '%s' already exists", name)
+            return
+
+        self.treatment_names.add(name)
+
         log.info(
             "Adding treatment '%s' to Experiment '%s', with %d replicates",
             name, self.name, replicates)
@@ -37,6 +44,24 @@ class Experiment(object):
         # consistency within a treatment if we change the replicate number
         tseed = self.rand.randint(0, 1 << 32)
         self.treatments.append(Treatment(self, name, replicates, tseed, **kwargs))
+
+    def get_replicate(self, name, rep_num):
+        # Look up the treatment
+        for t in self.treatments:
+            if t.name == name:
+                break
+        else:
+            log.warning("Treatment %s not found", name)
+            return None
+
+        # Now the replicate
+        try:
+            r = t.replicates[rep_num]
+        except IndexError:
+            log.warning("Replicate {} of Treatment {} not found".format(name, rep_num))
+            return None
+
+        return r
 
     def load_plugin(self, plugin_cls, kwargs):
         """Add some plugin to run both during and after the simulation"""
@@ -250,21 +275,27 @@ class Replicate(object):
     def analyse_simulation(self, plugins):
         # Put this warning at the beginning
         log.info("{:.^78}".format(""))
+        log.info("{: ^78}".format("Analysing Simulation"))
+        history = self.get_history()
+        if history is None:
+            return
+
+        for c in plugins:
+            c.do_analyse_replicate(history)
+        history.close()
+
+    def get_history(self):
         history_cls = self.experiment.config.history_class
         if history_cls is None:
-            log.warning("{: ^78}".format(
-                "No analysis possible as there no history class"))
-            return
+            log.warning("No analysis possible as there no history class")
+            return None
 
         if not os.path.exists(self.complete_mark):
-            log.info("{: ^78}".format("Can't Analyse Incomplete Simulation"))
-            return
-
-        log.info("{: ^78}".format("Analysing Simulation"))
+            log.info("Can't Analyse Incomplete Simulation")
+            return None
 
         # Load the history
         history_cls = self.experiment.config.history_class
         history = history_cls(self.output_path, replicate_seed=self.seed)
-        for c in plugins:
-            c.do_analyse_replicate(history)
-        history.close()
+        return history
+
