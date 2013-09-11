@@ -7,6 +7,7 @@ import random
 RUNNING = "RUNNING"
 COMPLETE = "COMPLETE"
 SEED = "SEED"
+SKIPPED = "SKIPPED"
 
 
 class Interrupt(Exception):
@@ -188,6 +189,10 @@ class Replicate(object):
         return os.path.join(self.output_path, SEED)
 
     @property
+    def skipped_mark(self):
+        return os.path.join(self.output_path, SKIPPED)
+
+    @property
     def output_path(self):
         return os.path.join(self.treatment.output_path,
                             "{:0>3}".format(self.sequence))
@@ -244,7 +249,11 @@ class Replicate(object):
             **self.treatment.extra_args
         )
 
-        sim._begin()
+        # We can skip a simulation if we don't begin
+        if not sim._begin():
+            # If the history is safely closed, we can now say we're done
+            os.unlink(self.running_mark)
+            open(self.skipped_mark, 'a').close()
 
         # Create a history class if we have one.
         if self.experiment.config.history_class is not None:

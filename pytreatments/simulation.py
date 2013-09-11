@@ -34,10 +34,10 @@ class Simulation(object):
         self.time_step = 0
 
     def _begin(self):
-        self.begin()
+        return self.begin()
 
     def begin(self):
-        pass
+        return True
 
     def _end(self):
         self.end()
