@@ -155,12 +155,13 @@ class Plugin(object):
                         # Make false
                         firsttime.pop()
                     else:
-                        # Discard headers
+                        # Discard headers after the first time
                         f.readline()
                     collated.write(f.read())
-                else:
-                    log.debug("Can't collate everything as %s is missing", r)
-                    success.pop()
+                elif not r.is_skipped:
+                    log.warning("Can't collate everything as %s is missing", r)
+                    if success:
+                        success.pop()
 
         if self.context == CTX_TREATMENT:
             collate_treatment(self.treatment)

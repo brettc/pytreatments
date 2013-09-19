@@ -177,6 +177,10 @@ class Replicate(object):
         return os.path.exists(self.complete_mark)
 
     @property
+    def is_skipped(self):
+        return os.path.exists(self.skipped_mark)
+
+    @property
     def running_mark(self):
         return os.path.join(self.output_path, RUNNING)
 
@@ -254,6 +258,7 @@ class Replicate(object):
             # If the history is safely closed, we can now say we're done
             os.unlink(self.running_mark)
             open(self.skipped_mark, 'a').close()
+            return
 
         # Create a history class if we have one.
         if self.experiment.config.history_class is not None:
