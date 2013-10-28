@@ -34,7 +34,7 @@ class Simulation(object):
         self.time_step = 0
 
     def _begin(self):
-        return self.begin()
+        return self.begin
 
     def begin(self):
         return True
@@ -50,7 +50,7 @@ class Simulation(object):
 
     def run(self, history=None, callbacks=None, progress=None):
         if progress:
-            progress.begin(self)
+            progress.begin
 
         while 1:
             self._step(history)

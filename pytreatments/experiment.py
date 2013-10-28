@@ -129,7 +129,8 @@ class Experiment(object):
 
         self.run_end()
 
-    def make_path(self, pth):
+    @staticmethod
+    def make_path(pth):
         if not os.path.exists(pth):
             log.debug("Making path %s", pth)
             os.makedirs(pth)
@@ -258,6 +259,7 @@ class Replicate(object):
             # If the history is safely closed, we can now say we're done
             os.unlink(self.running_mark)
             open(self.skipped_mark, 'a').close()
+            log.info("Skipping replicate, as begin return False...")
             return
 
         # Create a history class if we have one.

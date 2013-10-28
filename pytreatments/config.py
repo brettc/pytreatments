@@ -54,7 +54,8 @@ class Configuration(object):
             shutil.copy(self.script_path, self.output_path)
 
     ## {{{ http://code.activestate.com/recipes/541096/ (r1)
-    def confirm(self, prompt=None, resp=False):
+    @staticmethod
+    def confirm(prompt=None, resp=False):
         """prompts for yes or no response from the user. Returns True for yes and
         False for no.
 
@@ -142,7 +143,8 @@ class Configuration(object):
         self.output_path = pth
         log.info("Setting output folder to '%s'", self.output_path)
 
-    def init_logger(self, pth):
+    @staticmethod
+    def init_logger(pth):
         log_path = os.path.join(pth, "log.txt")
         handler = logging.FileHandler(log_path, 'a')
         formatter = logging.Formatter(
