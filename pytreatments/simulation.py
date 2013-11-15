@@ -36,9 +36,6 @@ class Simulation(object):
     def _begin(self):
         return self.begin()
 
-    def begin(self):
-        return True
-
     def _end(self):
         self.end()
 
@@ -50,7 +47,7 @@ class Simulation(object):
 
     def run(self, history=None, callbacks=None, progress=None):
         if progress:
-            progress.begin
+            progress.begin()
 
         while 1:
             self._step(history)
