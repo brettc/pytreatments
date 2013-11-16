@@ -2,10 +2,12 @@ import logging
 log = logging.getLogger("context")
 
 import plugin
+from config import Configuration
 
 
 class Context(object):
     def __init__(self, config):
+        assert isinstance(config, Configuration)
         self.config = config
 
         ns = {}
