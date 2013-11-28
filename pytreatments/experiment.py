@@ -24,7 +24,7 @@ class Experiment(object):
         self.loaded_plugins = []
         self.treatment_names = set()
 
-        # We use this to generates seeds for all of the experiments
+        # We use this to generates seeds for all of the treatments
         self.rand = random.Random()
 
     def set_seed(self, seed):
@@ -144,8 +144,11 @@ class Treatment(object):
         self.extra_args = kwargs
         self.rand = random.Random()
         self.rand.seed(tseed)
-        rfun = self.experiment.rand.randint
-        self.replicates = [Replicate(experiment, self, i, rfun(0, 1 << 32))
+
+        def make_seed():
+            return self.experiment.rand.randint(0, 1 << 32)
+
+        self.replicates = [Replicate(experiment, self, i, make_seed())
                            for i in range(self.replicate_count)]
 
     def run(self, plugins, callbacks, progress=None):

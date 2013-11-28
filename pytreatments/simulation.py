@@ -30,8 +30,10 @@ class Simulation(object):
         self.seed = seed
         self.treatment_name = treatment_name
         self.replicate_seq = replicate_seq
-        self.description = "T{0.treatment_name} R{0.replicate_seq:0>3}".format(self)
+        self.description = "T{0.treatment_name} R{0.replicate_seq:0>3}".\
+            format(self)
         self.time_step = 0
+        self.more = True
 
     def _begin(self):
         return self.begin()
