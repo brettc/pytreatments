@@ -24,13 +24,13 @@ class BaseProgress(object):
 
 
 class Simulation(object):
-    def __init__(self, seed, treatment_name, replicate_seq):
+    def __init__(self, seed, name, replicate_seq):
         """Construction a simulation.
         """
         self.seed = seed
-        self.treatment_name = treatment_name
+        self.name = name
         self.replicate_seq = replicate_seq
-        self.description = "T{0.treatment_name} R{0.replicate_seq:0>3}".\
+        self.description = "T{0.name} R{0.replicate_seq:0>3}".\
             format(self)
         self.time_step = 0
         self.more = True
