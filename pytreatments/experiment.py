@@ -23,12 +23,16 @@ class Experiment(object):
         self.current_treatment = None
         self.loaded_plugins = []
         self.treatment_names = set()
+        self.use_history = True
 
         # We use this to generates seeds for all of the treatments
         self.rand = random.Random()
 
     def set_seed(self, seed):
         self.rand.seed(seed)
+
+    def disable_history(self):
+        self.use_history = False
 
     def add_treatment(self, name, replicates, **kwargs):
         if name in self.treatment_names:
@@ -177,6 +181,10 @@ class Replicate(object):
         self.seed = seed
 
     @property
+    def text_name(self):
+        return "{0}.{1}".format(self.experiment.name, self.treatment.name)
+
+    @property
     def is_complete(self):
         return os.path.exists(self.complete_mark)
 
@@ -212,7 +220,7 @@ class Replicate(object):
                     return
 
         text = "{0} Rep:{1:0>3} ({2:}/{3:}), using Seed:{4:}".format(
-            self.treatment.text,
+            self.text_name,
             self.sequence,
             self.sequence + 1,
             self.treatment.replicate_count,
@@ -252,7 +260,7 @@ class Replicate(object):
         # Finally, we actually create a simulation
         sim = self.experiment.config.sim_class(
             seed=self.seed,
-            treatment_name=self.treatment.name,
+            name=self.text_name,
             replicate_seq=self.sequence,
             **self.treatment.extra_args
         )
@@ -265,8 +273,9 @@ class Replicate(object):
             log.info("Skipping replicate, as begin return False...")
             return
 
-        # Create a history class if we have one.
-        if self.experiment.config.history_class is not None:
+        # Create a history class if we have one and WANT one
+        if self.experiment.use_history and \
+                self.experiment.config.history_class is not None:
             history_cls = self.experiment.config.history_class
             history = history_cls(self.output_path, sim)
         else:
@@ -305,6 +314,11 @@ class Replicate(object):
 
     def get_history(self):
         history_cls = self.experiment.config.history_class
+
+        if not self.experiment.use_history:
+            log.warning("No analysis possible as history was disabled")
+            return None
+
         if history_cls is None:
             log.warning("No analysis possible as there no history class")
             return None

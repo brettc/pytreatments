@@ -17,6 +17,7 @@ class Context(object):
         ns['get_replicate'] = self.get_replicate
         ns['seed'] = self.set_seed
         ns['output'] = self.set_output
+        ns['disable_history'] = self.disable_history
 
         # Load the plugin class into the namespace
         for p in plugin.plugin_classes:
@@ -33,6 +34,10 @@ class Context(object):
     def set_output(self, pth):
         log.info("The script is setting the output_path to '%s'", pth)
         self.config.set_base_path(pth)
+
+    def disable_history(self):
+        log.info("No history will be created!")
+        self.config.experiment.disable_history()
 
     def set_seed(self, seed):
         log.info("Setting the experiment random seed to %s", seed)
