@@ -30,8 +30,7 @@ class Simulation(object):
         self.seed = seed
         self.name = name
         self.replicate_seq = replicate_seq
-        self.description = "T{0.name} R{0.replicate_seq:0>3}".\
-            format(self)
+        self.description = "{0.name}.r{0.replicate_seq:0>3}".format(self)
         self.time_step = 0
         self.more = True
 
