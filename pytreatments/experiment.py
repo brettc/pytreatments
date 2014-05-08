@@ -47,6 +47,8 @@ class Experiment(object):
 
         # We give each treatment its own derivative seed to maintain
         # consistency within a treatment if we change the replicate number
+        # TODO: This relies on the ordering off adding treatments. Maybe we
+        # should generate this on the basis of name? 
         tseed = self.rand.randint(0, 1 << 32)
         self.treatments.append(Treatment(self, name, replicates, tseed, **kwargs))
 
@@ -328,7 +330,6 @@ class Replicate(object):
             return None
 
         # Load the history
-        history_cls = self.experiment.config.history_class
         history = history_cls(self.output_path, replicate_seed=self.seed)
         return history
 

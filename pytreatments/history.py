@@ -13,7 +13,6 @@ class History(object):
             self.mode = 'w'
             self.init(sim)
         else:
-            assert replicate_seed is not None
             self.mode = 'r'
             self.mark_time()
             sim = self.load()
@@ -23,11 +22,12 @@ class History(object):
 
             # Verify that the seed is the same (ensures stability of analysis
             # under changing code)
-            if sim.seed != replicate_seed:
-                log.warning(
-                    "The replicate seed (%d) given by the experiment is different "
-                    "from the saved seed (%d) in the history!",
-                    replicate_seed, self.sim.seed)
+            if replicate_seed is not None:
+                if sim.seed != replicate_seed:
+                    log.warning(
+                        "The replicate seed (%d) given by the experiment is different "
+                        "from the saved seed (%d) in the history!",
+                        replicate_seed, self.sim.seed)
 
             # Extra verification can be built into here
             self.verify()
