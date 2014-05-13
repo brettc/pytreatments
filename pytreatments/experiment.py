@@ -1,8 +1,10 @@
 import logging
 log = logging.getLogger("experiment")
 import os
-
 import random
+import cPickle as pickle
+
+from analysis_data import AnalysisData
 
 RUNNING = "RUNNING"
 COMPLETE = "COMPLETE"
@@ -34,7 +36,8 @@ class Experiment(object):
     def disable_history(self):
         self.use_history = False
 
-    def add_treatment(self, name, replicates, **kwargs):
+    def add_treatment(self, name, replicates, 
+                      analysis_data=AnalysisData(), **kwargs):
         if name in self.treatment_names:
             log.error("Treatment with name '%s' already exists", name)
             return
@@ -50,7 +53,8 @@ class Experiment(object):
         # TODO: This relies on the ordering off adding treatments. Maybe we
         # should generate this on the basis of name? 
         tseed = self.rand.randint(0, 1 << 32)
-        self.treatments.append(Treatment(self, name, replicates, tseed, **kwargs))
+        self.treatments.append(
+            Treatment(self, name, replicates, analysis_data, tseed, kwargs))
 
     def get_replicate(self, name, rep_num):
         # Look up the treatment
@@ -143,10 +147,11 @@ class Experiment(object):
 
 
 class Treatment(object):
-    def __init__(self, experiment, name, rcount, tseed, **kwargs):
+    def __init__(self, experiment, name, rcount, analysis_data, tseed, kwargs):
         self.experiment = experiment
         self.name = name
         self.replicate_count = rcount
+        self.analysis_data = analysis_data
         self.extra_args = kwargs
         self.rand = random.Random()
         self.rand.seed(tseed)
@@ -272,7 +277,7 @@ class Replicate(object):
             # If the history is safely closed, we can now say we're done
             os.unlink(self.running_mark)
             open(self.skipped_mark, 'a').close()
-            log.info("Skipping replicate, as begin return False...")
+            log.info("Skipping replicate... (begin() returns False)")
             return
 
         # Create a history class if we have one and WANT one
@@ -306,6 +311,11 @@ class Replicate(object):
         # Put this warning at the beginning
         log.info("{:.^78}".format(""))
         log.info("{: ^78}".format("Analysing Simulation"))
+
+        # Rewrite the analysis data as it may have changed (the history class
+        # will then reload and incorporate it)
+        self.treatment.analysis_data.save(self.output_path)
+
         history = self.get_history()
         if history is None:
             return

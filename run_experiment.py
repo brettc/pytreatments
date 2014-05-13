@@ -4,7 +4,7 @@ log = logging.getLogger("run_experiment")
 import sys
 from pytreatments import (
     run_main, Context, Simulation,
-    register_plugin, TreatmentPlugin, ReplicatePlugin
+    register_plugin, Plugin, History
 )
 
 
@@ -21,56 +21,60 @@ class MyContext(Context):
 
 
 class MySimulation(Simulation):
-    def __init__(self, seed, treatment, replicate, params):
-        Simulation.__init__(self, seed, treatment, replicate)
+    def __init__(self, seed, name, replicate_seq, params):
+        Simulation.__init__(self, seed, name, replicate_seq)
         self.params = params
 
     def begin(self):
         log.info("Starting up with Parameters:"
                  "name:{0.name}, cycles:{0.cycles}".format(self.params))
+        return True
 
-    def step(self):
+    def step(self, history):
         log.info("Stepping %s", self.description)
-        if self.time_step < self.params.cycles:
-            return True
-
-        return False
+        if self.time_step >= self.params.cycles:
+            return False
+        return True
 
     def end(self):
         log.info("Ending ...")
 
 
-class MyHistory(object):
-    def __init__(self, folder, sim=None):
-        if sim is None:
-            log.info("Loading history object from '%s'" % folder)
-        else:
-            log.info("Creating history object for recording '%s'" % folder)
-
-    def close(self):
-        pass
+class MyHistory(History):
+    pass
 
 
 @register_plugin
-class simple_capture(ReplicatePlugin):
+class simple_capture(Plugin):
 
-    def begin_replicate(self, sim):
+    def begin_replicate(self, r):
         self.output = self.get_file('captured.txt')
 
     def step(self, sim):
-        self.output.write("stepping in sim %s" % sim.time_step)
+        self.output.write("stepping in sim %s\n" % sim.time_step)
 
-    def analyse(self, history):
+    def analyse_replicate(self, history):
         log.info("Analysing history ...")
 
+    def end_experiment(self, exp):
+        for t in exp.treatments:
+            for r in t.replicates:
+                log.info("Another rep...%s", r.output_path)
+                h = r.get_history()
+                if h:
+                    s = h.sim
+                    log.info("simulation seed %s", s.seed)
+                
 
-@register_plugin
-class nothing(TreatmentPlugin):
-    def begin_treatment(self):
-        self.output = self.get_file('yippeee.txt')
 
-    def begin_replicate(self, sim):
-        self.output.write("Another one\n")
+
+# @register_plugin
+# class nothing(Plugin):
+#     def begin_treatment(self):
+#         self.output = self.get_file('yippeee.txt')
+#
+#     def begin_replicate(self, sim):
+#         self.output.write("Another one\n")
 
 
 if __name__ == "__main__":

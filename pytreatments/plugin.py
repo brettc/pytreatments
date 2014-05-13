@@ -67,7 +67,7 @@ class Plugin(object):
         self.output_path = self.experiment_output_path
         if hasattr(self, 'begin_experiment'):
             log.info("Begin experiment processing for '%s'", self.name)
-            self.begin_experiment()
+            self.begin_experiment(self.config.experiment)
 
     def do_begin_treatment(self, t):
         self.context = CTX_TREATMENT
@@ -75,7 +75,7 @@ class Plugin(object):
         self.output_path = self.treatment_output_path
         if hasattr(self, 'begin_treatment'):
             log.debug("plugin:'%s' begin_treatment" % self.name)
-            self.begin_treatment()
+            self.begin_treatment(t)
 
     def do_begin_replicate(self, r):
         self.context = CTX_REPLICATE
@@ -83,7 +83,7 @@ class Plugin(object):
         self.output_path = self.replicate_output_path
         if hasattr(self, 'begin_replicate'):
             log.debug("plugin:'%s' begin_replicate..." % self.name)
-            self.begin_replicate()
+            self.begin_replicate(r)
 
     def do_begin_simulation(self, sim):
         if hasattr(self, 'begin_simulation'):
@@ -111,7 +111,7 @@ class Plugin(object):
         self.context = CTX_REPLICATE
         if hasattr(self, 'end_replicate'):
             log.debug("plugin:'%s' end_replicate..." % self.name)
-            self.end_replicate()
+            self.end_replicate(self.replicate)
         self.replicate = None
 
     def do_end_treatment(self):
@@ -119,7 +119,7 @@ class Plugin(object):
         self.output_path = self.treatment_output_path
         if hasattr(self, 'begin_treatment'):
             log.debug("plugin:'%s' begin_treatment" % self.name)
-            self.begin_treatment()
+            self.end_treatment(self.treatment)
         self.treatment = None
 
     def do_end_experiment(self):
@@ -127,7 +127,7 @@ class Plugin(object):
         self.output_path = self.experiment_output_path
         if hasattr(self, 'end_experiment'):
             log.info("End Experiment processing '%s'", self.name)
-            self.end_experiment()
+            self.end_experiment(self.config.experiment)
 
     def collate_csv(self, nm):
         """Collate all separate CSV files into one

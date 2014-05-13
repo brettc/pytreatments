@@ -3,6 +3,7 @@ log = logging.getLogger("context")
 
 import plugin
 from config import Configuration
+from analysis_data import AnalysisData
 
 
 class Context(object):
@@ -18,6 +19,7 @@ class Context(object):
         ns['seed'] = self.set_seed
         ns['output'] = self.set_output
         ns['disable_history'] = self.disable_history
+        ns['analysis_data'] = AnalysisData
 
         # Load the plugin class into the namespace
         for p in plugin.plugin_classes:
