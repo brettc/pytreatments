@@ -340,6 +340,6 @@ class Replicate(object):
             return None
 
         # Load the history
-        history = history_cls(self.output_path, replicate_seed=self.seed)
+        history = history_cls(self.output_path)
         return history
 

@@ -22,9 +22,13 @@ class AnalysisData(object):
 
         with pth.open('rb') as f:
             self.data = pickle.load(f)
+
+        return self
         
     def save(self, base_path):
         pth = self.data_path(base_path)
         with pth.open('wb') as f:
             pickle.dump(self.data, f, -1)
+
+        return self
 

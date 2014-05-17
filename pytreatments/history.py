@@ -8,41 +8,32 @@ from analysis_data import AnalysisData
 
 
 class History(object):
-    def __init__(self, pth, sim=None, replicate_seed=None):
+    @property
+    def pickle_path(self):
+        return os.path.join(self.path, 'history.pickle')
+
+    def __init__(self, pth, sim=None):
         self.path = pth
 
+        # If we get a simulation, then we're saving. Otherwise, we're loading.
         if sim is not None:
             self.running = True
             self.mode = 'w'
-            self.init(sim)
+            self.sim = sim
+            self.on_init()
         else:
+            # TODO: We should be able to load in 'w' mode, and continue the
+            # simulation!!
             self.mode = 'r'
             self.mark_time()
-            self.analysis_data = AnalysisData()
-            self.analysis_data.load(self.path)
             self.load()
             log.debug("Loading history from %s took %f seconds",
                       pth, self.report_time())
             self.running = False
 
-            # Verify that the seed is the same (ensures stability of analysis
-            # under changing code)
-            if replicate_seed is not None:
-                if self.sim.seed != replicate_seed:
-                    log.warning(
-                        "The replicate seed (%d) given by the experiment is different "
-                        "from the saved seed (%d) in the history!",
-                        replicate_seed, self.sim.seed)
-
-            # Extra verification can be built into here
-            self.verify()
-
     def load_pickle(self):
         f = open(self.pickle_path, 'rb')
-        sim = pickle.load(f)
-
-        # We're going to save this
-        self.sim = sim
+        self.sim = pickle.load(f)
 
     def save_pickle(self):
         if self.mode == 'w':
@@ -58,17 +49,26 @@ class History(object):
         return time.clock() - self.start_counting
 
     def load(self):
+        self.analysis_data = AnalysisData().load(self.path)
         self.load_pickle()
 
-    def init(self, sim):
-        self.sim = sim
+        # Now let the derived class do it's thing
+        self.on_load()
 
     def close(self):
+        self.on_close()
+
+        # Now save out our simulation
         self.save_pickle()
 
-    def verify(self):
+    def on_load(self):
         pass
 
-    @property
-    def pickle_path(self):
-        return os.path.join(self.path, 'history.pickle')
+    def on_close(self):
+        pass
+
+    def on_init(self):
+        pass
+
+
+

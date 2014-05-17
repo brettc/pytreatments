@@ -53,8 +53,10 @@ class simple_capture(Plugin):
     def step(self, sim):
         self.output.write("stepping in sim %s\n" % sim.time_step)
 
-    def analyse_replicate(self, history):
-        log.info("Analysing history ...")
+    def end_replicate(self, r):
+        self.output.close()
+        h = r.get_history()
+        log.info("Analysing history ...%s", h)
 
     def end_experiment(self, exp):
         for t in exp.treatments:
@@ -65,17 +67,6 @@ class simple_capture(Plugin):
                     s = h.sim
                     log.info("simulation seed %s", s.seed)
                 
-
-
-
-# @register_plugin
-# class nothing(Plugin):
-#     def begin_treatment(self):
-#         self.output = self.get_file('yippeee.txt')
-#
-#     def begin_replicate(self, sim):
-#         self.output.write("Another one\n")
-
 
 if __name__ == "__main__":
     sys.exit(run_main(MySimulation, MyContext, MyHistory))
