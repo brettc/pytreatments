@@ -5,6 +5,7 @@ import os
 import traceback
 import sys
 import cStringIO
+import pathlib
 
 
 class ScriptError(Exception):
@@ -25,6 +26,11 @@ class Script(object):
 
         # We need to set some stuff in the Experiment first
         self.context.config.set_script(pth)
+
+        # We add the path for python so it can load local plugins
+        localdir = os.path.dirname(pth)
+        log.info("Adding '%s' to python path...", localdir)
+        sys.path.append(localdir)
 
         # ... then execute this (which can change the config)
         self.execute(pth)
