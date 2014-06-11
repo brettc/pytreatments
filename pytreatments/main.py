@@ -109,3 +109,24 @@ def run_main(sim_class, context_class, history_class=None, progress=None, parser
         pass
 
     return 1
+
+
+def load_experiment(sim_class, context_class, history_class, script_path):
+    # configure_logging()
+    p = get_parser()
+    args = p.parse_args(['NONE', '--anal'])
+
+    # If there's no extension, add it
+    root, ext = os.path.splitext(script_path)
+    if ext == "" or ext == ".":
+        script_path = root + '.cfg'
+
+    log.info("{:=<78}".format("Starting up"))
+
+    # Load, using the first argument as the folder
+    cfg = config.Configuration(sim_class, history_class, args)
+    ctx = context_class(cfg)
+    spt = script.Script(ctx)
+
+    spt.load(script_path)
+    return cfg.experiment

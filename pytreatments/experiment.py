@@ -24,7 +24,7 @@ class Experiment(object):
         self.treatments = []
         self.current_treatment = None
         self.loaded_plugins = []
-        self.treatment_names = set()
+        self.treatments_by_key = {}
         self.use_history = True
 
         # We use this to generates seeds for all of the treatments
@@ -38,11 +38,9 @@ class Experiment(object):
 
     def add_treatment(self, name, replicates, 
                       analysis_data=AnalysisData(), **kwargs):
-        if name in self.treatment_names:
+        if name in self.treatments_by_key:
             log.error("Treatment with name '%s' already exists", name)
             return
-
-        self.treatment_names.add(name)
 
         log.info(
             "Adding treatment '%s' to Experiment '%s', with %d replicates",
@@ -53,8 +51,9 @@ class Experiment(object):
         # TODO: This relies on the ordering off adding treatments. Maybe we
         # should generate this on the basis of name? 
         tseed = self.rand.randint(0, 1 << 32)
-        self.treatments.append(
-            Treatment(self, name, replicates, analysis_data, tseed, kwargs))
+        the_treatment = Treatment(self, name, replicates, analysis_data, tseed, kwargs)
+        self.treatments.append(the_treatment)
+        self.treatments_by_key[name] = the_treatment
 
     def get_replicate(self, name, rep_num):
         # Look up the treatment
@@ -94,8 +93,10 @@ class Experiment(object):
     def run_begin(self):
         text = "Begin Experiment:'{}'".format(self.name)
         log.info("{:=^78}".format(text))
-        self.output_path = self.config.output_path
-        # open(self.experiment_mark, 'a').close()
+
+    @property 
+    def output_path(self):
+        return self.config.output_path
 
     def run_end(self):
         text = "End Experiment:'{}'".format(self.name)
@@ -145,7 +146,6 @@ class Experiment(object):
             log.debug("Making path %s", pth)
             os.makedirs(pth)
 
-
 class Treatment(object):
     def __init__(self, experiment, name, rcount, analysis_data, tseed, kwargs):
         self.experiment = experiment
@@ -162,8 +162,12 @@ class Treatment(object):
         self.replicates = [Replicate(experiment, self, i, make_seed())
                            for i in range(self.replicate_count)]
 
+    @property
+    def output_path(self):
+        return os.path.join(self.experiment.output_path, self.name)
+
     def run(self, plugins, callbacks, progress=None):
-        self.output_path = os.path.join(self.experiment.output_path, self.name)
+        # self.output_path = os.path.join(self.experiment.output_path, self.name)
         self.text = "Experiment:'{0}' Treatment:'{1}'".format(
             self.experiment.name, self.name)
         log.info("{:=^78}".format(""))

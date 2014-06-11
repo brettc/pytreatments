@@ -46,12 +46,13 @@ class Configuration(object):
         self.make_experiment_folder(self.experiment.name + '.output')
         self.init_logger(self.output_path)
 
-        if self.script_path:
-            # We're going to stick a copy of the script into the output folder.
-            # This is good for referring to later
-            log.info("Saving copy of script '%s' to '%s'",
-                     self.script_path, self.output_path)
-            shutil.copy(self.script_path, self.output_path)
+        if not self.analysis_only:
+            if self.script_path:
+                # We're going to stick a copy of the script into the output folder.
+                # This is good for referring to later
+                log.info("Saving copy of script '%s' to '%s'",
+                        self.script_path, self.output_path)
+                shutil.copy(self.script_path, self.output_path)
 
     ## {{{ http://code.activestate.com/recipes/541096/ (r1)
     @staticmethod

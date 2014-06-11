@@ -31,6 +31,13 @@ class History(object):
                       pth, self.report_time())
             self.running = False
 
+    # Allow with statements
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
     def load_pickle(self):
         f = open(self.pickle_path, 'rb')
         self.sim = pickle.load(f)
